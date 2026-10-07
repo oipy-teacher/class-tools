@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>活用拍子 ― 下の語を見て、形を打つ</title>
+<style>
+:root{
+  --moegi:#8AA234;      /* 主色：萌黄。今答える語・正解 */
+  --moegi-kage:#3E6B4C; /* 影：萌黄から色相をずらした深い緑 */
+  --sumi:#1B1A17;       /* 墨 */
+  --ryoushi:#F2EEE3;    /* 料紙（真っ白にしない） */
+  --shu:#C8452C;        /* 朱：下の語の傍線だけに使う */
+  --usuzumi:#8C877B;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  --gothic:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+  --bar:52px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--ryoushi);color:var(--sumi);font-family:var(--gothic);overflow:hidden;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation}
+button{font-family:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+/* 料紙の繊維（軽い・1か所だけ） */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+  background-image:repeating-linear-gradient(97deg,rgba(120,105,80,.05) 0 1px,transparent 1px 7px),repeating-linear-gradient(3deg,rgba(120,105,80,.04) 0 1px,transparent 1px 11px)}
+
+/* 上の帯：どの画面でも出す */
+#bar{position:fixed;left:0;right:0;top:0;height:var(--bar);display:flex;align-items:center;gap:8px;padding:0 10px;z-index:55;
+  background:var(--sumi);color:var(--ryoushi)}
+#bar .ttl{font:700 15px var(--mincho);letter-spacing:.2em;margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#zeni{display:flex;align-items:center;gap:6px;font:800 18px var(--gothic);min-width:72px}
+#zeni svg{width:26px;height:26px}
+.barbtn{height:40px;min-width:48px;padding:0 10px;border:2px solid var(--ryoushi);background:transparent;color:var(--ryoushi);font:800 16px var(--gothic)}
+.barbtn:active{background:var(--ryoushi);color:var(--sumi)}
+/* やめる（2026-10-07 社長「途中でやめる（戻る）がない」）：表紙以外のどの画面・札の上からでも押せる。帯は札より上に置く */
+#quitBtn{min-width:88px;white-space:nowrap}
+#bar.t #quitBtn{display:none}
+/* 表紙からも出られる（2026-10-07 社長「トップ画面から戻れないぜ。間違って選ぶ可能性あるやんな」）。表紙ではまだ遊んでいないので札をはさまずにすぐ戻る */
+#homeBtn{min-width:88px;white-space:nowrap;display:none}
+#bar.t #homeBtn{display:block}
+#quitV{z-index:70}
+#quitV .card{width:min(440px,100%);text-align:center}
+#quitV h2{font:900 26px var(--mincho);margin:6px 0 8px}
+#quitV p{font:700 16px/1.6 var(--gothic);margin:0 0 4px}
+#quitV .qb{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+#quitV .qb .go{height:64px;min-width:150px}
+#helpBtn{width:48px;font:900 22px var(--mincho);background:var(--moegi);border-color:var(--moegi);color:var(--sumi)}
+
+.screen{position:absolute;left:0;right:0;top:var(--bar);bottom:0;display:none;overflow:hidden}
+.screen.on{display:block}
+
+/* ===== 表紙 ===== */
+#title .slab{position:absolute;left:-10%;right:-10%;top:30%;height:34%;background:var(--moegi);transform:skewY(-7deg);box-shadow:0 14px 0 var(--moegi-kage)}
+#title .big{position:absolute;right:8%;top:5%;writing-mode:vertical-rl;font:900 clamp(56px,13vh,128px)/1 var(--mincho);letter-spacing:.06em;color:var(--sumi)}
+#title .big small{display:block;font-size:.28em;letter-spacing:.3em;margin-top:.4em;color:var(--sumi)}
+#title .tsuzumi{position:absolute;left:8%;top:12%;width:min(34vw,240px)}
+#title .sub{position:absolute;left:6%;bottom:22%;font:700 clamp(18px,3.2vh,26px) var(--mincho);background:var(--ryoushi);padding:6px 12px;border-left:6px solid var(--sumi)}
+#startBtn{position:absolute;left:6%;bottom:6%;height:76px;padding:0 34px;font:900 26px var(--gothic);background:var(--sumi);color:var(--ryoushi);border:0;box-shadow:8px 8px 0 var(--moegi-kage)}
+#startBtn:active,.go:active{transform:translate(4px,4px);box-shadow:4px 4px 0 var(--moegi-kage)}
+
+/* ===== 段の巻（地図） ===== */
+#map .row{position:absolute;left:0;right:0;top:12px;bottom:110px;display:flex;flex-direction:row-reverse;justify-content:center;gap:12px;padding:0 12px}
+.dan{flex:1;max-width:150px;border:4px solid var(--sumi);background:var(--ryoushi);display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:10px;position:relative;box-shadow:6px 6px 0 var(--moegi-kage)}
+.dan:active{transform:translate(3px,3px);box-shadow:3px 3px 0 var(--moegi-kage)}
+.dan .no{font:900 20px var(--mincho);background:var(--sumi);color:var(--ryoushi);width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.dan .nm{writing-mode:vertical-rl;font:800 clamp(18px,3.4vh,28px)/1.3 var(--mincho);letter-spacing:.12em}
+.dan .what{writing-mode:vertical-rl;font:500 13px/1.5 var(--gothic);color:#4a463d;margin-top:auto}
+.dan.next{background:var(--moegi)}
+.dan .done{position:absolute;top:-12px;right:-10px;background:var(--shu);color:#fff;font:800 12px var(--gothic);padding:3px 6px;transform:rotate(8deg)}
+#map .foot{position:absolute;left:12px;right:12px;bottom:14px;height:80px;display:flex;gap:12px;justify-content:center}
+.go{height:72px;padding:0 22px;font:900 20px var(--gothic);border:4px solid var(--sumi);background:var(--ryoushi);box-shadow:6px 6px 0 var(--moegi-kage)}
+.go.main{background:var(--sumi);color:var(--ryoushi)}
+
+/* ===== あそぶ ===== */
+#play{display:none}
+#play.on{display:grid;grid-template-rows:auto 1fr auto auto}
+#phead{display:flex;align-items:center;gap:10px;padding:8px 12px 0}
+#phead .dn{font:800 16px var(--mincho);letter-spacing:.1em;white-space:nowrap}
+#dots{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+#dots i{width:12px;height:12px;border:2px solid var(--sumi);display:block}
+#dots i.ok{background:var(--moegi)} #dots i.cur{background:var(--sumi)}
+#stage{position:relative;overflow:hidden}
+#stage .band{position:absolute;left:-10%;right:-10%;top:50%;height:44%;transform:translateY(-50%) skewY(-4deg);background:var(--moegi);opacity:.22;transition:none}
+#ask{min-height:48px;padding:6px 12px;font:800 clamp(16px,2.6vh,20px)/1.35 var(--gothic);text-align:center}
+#ask .hint{display:table;margin:4px auto 0;padding:4px 10px;border:2px dashed var(--sumi);font-weight:700;background:var(--ryoushi)}
+#ask .hint button{margin-left:8px;border:0;background:none;text-decoration:underline;font:700 15px var(--gothic);min-height:40px}
+#pads{display:flex;flex-direction:row-reverse;gap:8px;padding:6px 10px calc(12px + env(safe-area-inset-bottom));justify-content:center;flex-wrap:wrap}
+
+/* 縦書きの文 */
+.tate{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);writing-mode:vertical-rl;font-family:var(--mincho);font-weight:600;line-height:1.5;letter-spacing:.08em;white-space:nowrap}
+.tate .v,.tate .n{white-space:nowrap}
+.tate .v{background:var(--moegi);color:var(--sumi);padding:.12em 0;box-shadow:.12em .12em 0 var(--moegi-kage)}
+.tate .n{border-right:.14em solid var(--shu);padding-right:.06em}
+.tate .dim{color:#5d584c}
+.src{position:absolute;right:14px;top:8px;font:600 14px var(--mincho);color:#4a463d}
+.src::before{content:"出典 ";font:700 11px var(--gothic);color:var(--usuzumi)}
+
+/* 打つ札（活用形） */
+.pad{flex:1 1 0;min-width:52px;max-width:128px;height:clamp(96px,15vh,124px);border:4px solid var(--sumi);background:var(--ryoushi);display:flex;align-items:center;justify-content:center;gap:2px;box-shadow:5px 5px 0 var(--moegi-kage);position:relative}
+.pad .vt{writing-mode:vertical-rl;font:900 clamp(22px,3.6vh,30px)/1 var(--mincho);letter-spacing:.06em}
+.pad .vt small{font-size:.55em}
+.pad.down{transform:translate(3px,3px) scale(.96);box-shadow:2px 2px 0 var(--moegi-kage)}
+.pad.right{background:var(--moegi)}
+.pad.wrong{background:#d9d4c7;color:#6b665a}
+.pad.wrong::after{content:"";position:absolute;left:8%;right:8%;top:50%;height:4px;background:var(--sumi);transform:rotate(-24deg)}
+.pad.show{outline:4px dashed var(--moegi-kage);outline-offset:3px}
+.pad.kana .vt{font-size:clamp(34px,6vh,48px)}
+.pad.wide{max-width:none;flex-basis:100%;height:64px}
+.pad.grp{flex-direction:column;max-width:none;flex:1 1 30%;height:auto;min-height:84px;padding:6px 4px}
+.pad.grp b{font:900 22px var(--mincho)}
+.pad.grp span{font:600 12.5px/1.35 var(--gothic);color:#3d3a33;text-align:center}
+
+/* 唱えの段：活用表の行 */
+#chant{position:absolute;inset:6px 10px;display:flex;flex-direction:row-reverse;justify-content:center;gap:6px}
+.col{flex:1;max-width:120px;display:flex;flex-direction:column;align-items:center;border:3px solid var(--sumi);background:var(--ryoushi)}
+.col .fm{width:100%;text-align:center;background:var(--sumi);color:var(--ryoushi);font:800 clamp(13px,2.2vh,17px) var(--gothic);padding:4px 0}
+.col .sl{flex:1;writing-mode:vertical-rl;font:800 clamp(28px,5.4vh,46px)/1 var(--mincho);display:flex;align-items:center;justify-content:center;letter-spacing:.04em;padding:6px 0}
+.col .sl .e{display:inline-block;min-height:1em;min-width:1em}
+.col .sl .e.empty{border:2px dashed var(--usuzumi);color:transparent}
+.col .nx{width:100%;text-align:center;font:800 clamp(18px,3vh,24px) var(--mincho);padding:6px 0;border-top:3px solid var(--sumi);color:var(--sumi)}
+.col .nx b{border-bottom:3px solid var(--shu)}
+.col.lit{background:var(--moegi)}
+.col.lit .sl .e.empty{border-color:var(--sumi)}
+#drum{position:absolute;left:12px;bottom:6px;width:54px;height:54px;opacity:.9}
+#drum.beat{animation:beat .16s ease-out}
+@keyframes beat{from{transform:scale(1.18)}to{transform:scale(1)}}
+
+/* 決め（正解の0.6秒だけ斜め） */
+#kime{position:fixed;left:50%;top:44%;z-index:30;pointer-events:none;font:900 clamp(40px,9vh,84px)/1 var(--mincho);color:var(--sumi);
+  background:var(--moegi);padding:.12em .4em;box-shadow:10px 10px 0 var(--moegi-kage);opacity:0;transform:translate(-50%,-50%)}
+#kime .kin{display:inline-block}
+#kime .kl{position:absolute;left:-.2em;top:-1.5em;font:900 clamp(15px,2.6vh,22px)/1 var(--gothic);letter-spacing:.1em;background:var(--sumi);color:var(--ryoushi);padding:.35em .6em;white-space:nowrap}
+#fxc{position:fixed;inset:0;width:100vw;height:100vh;z-index:29;pointer-events:none}
+/* 読み（ふりがな） */
+rt{font-size:.5em;font-weight:600;letter-spacing:0;color:#4a463d;font-family:var(--gothic)}
+.tate rt{font-size:.34em}
+.tate .v rt{color:var(--sumi)}
+.pad.grp rt{font-size:10px}
+.fuda .w rt{font-size:.3em}
+.cho rt{font-size:10px}
+.tc rt{font-size:11px}
+.yomi{margin:6px 0 4px;padding:4px 8px;border-left:4px solid var(--shu);font:700 .95em/1.5 var(--gothic)}
+.yomi small{font-weight:600;color:#4a463d}
+/* まとめて引いた結果 */
+.ten{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0 6px}
+.tc{position:relative;height:clamp(124px,21vh,172px);perspective:700px}
+.tc .bk,.tc .fc{position:absolute;inset:0;border:3px solid var(--sumi);-webkit-backface-visibility:hidden;backface-visibility:hidden;transition:transform .3s cubic-bezier(.3,1.4,.5,1)}
+.tc .bk{background:repeating-linear-gradient(90deg,#3E6B4C 0 6px,#365f43 6px 12px);display:flex;align-items:center;justify-content:center;box-shadow:4px 4px 0 var(--sumi)}
+.tc .bk span{font:900 26px var(--mincho);color:var(--ryoushi);border:2px solid var(--ryoushi);padding:6px 4px;writing-mode:vertical-rl}
+.tc .fc{background:var(--ryoushi);transform:rotateY(180deg);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:4px 4px 0 var(--moegi-kage)}
+.tc.open .bk{transform:rotateY(-180deg)}
+.tc.open .fc{transform:rotateY(0)}
+.tc .wd{writing-mode:vertical-rl;font:900 clamp(15px,2.5vh,22px)/1.1 var(--mincho);letter-spacing:.04em}
+.tc .rk{position:absolute;left:0;bottom:0;font:900 12px var(--gothic);padding:2px 5px;background:var(--sumi);color:var(--ryoushi)}
+.tc.r1 .fc{background:#dfe6c4}.tc.r1 .rk{background:var(--moegi);color:var(--sumi)}
+.tc.r2 .fc{background:#f0d3c9;border-color:#A8842C;border-width:4px}.tc.r2 .rk{background:var(--shu)}
+.tc .nw{position:absolute;right:2px;top:2px;font:900 13px var(--gothic);color:#fff;background:var(--shu);padding:2px 4px;transform:rotate(10deg) scale(0);opacity:0}
+.tc.new .nw{opacity:1;transform:rotate(10deg) scale(1);transition:transform .2s .25s cubic-bezier(.3,1.8,.5,1),opacity .1s .25s}
+.tc .hl{position:absolute;inset:0;background:#FFF6D8;opacity:0;pointer-events:none}
+.tc.new .hl{animation:hl .6s ease-out .2s}
+@keyframes hl{0%{opacity:.95}100%{opacity:0}}
+.tc.tease .bk{box-shadow:4px 4px 0 var(--sumi),0 0 0 4px #C9A646}
+.tc.r2.tease .bk{box-shadow:4px 4px 0 var(--sumi),0 0 0 5px var(--shu)}
+.calm .tc .bk,.calm .tc .fc{transition:none}
+.calm .tc.new .hl{animation:none}
+#pita{position:fixed;z-index:31;pointer-events:none;font:900 22px var(--gothic);color:var(--moegi-kage);opacity:0}
+
+/* 指のお手本 */
+#finger{position:fixed;z-index:60;width:64px;height:64px;pointer-events:none;display:none}
+#finger .ring{position:absolute;left:-14px;top:-14px;width:56px;height:56px;border:4px solid var(--sumi);border-radius:50%;opacity:0}
+#finger.on{display:block}
+#finger.on .ring{animation:ring 1.1s ease-out infinite}
+#finger svg{position:absolute;left:4px;top:6px;width:52px;height:64px;animation:poke 1.1s ease-in-out infinite}
+@keyframes ring{0%{transform:scale(.4);opacity:.9}70%{transform:scale(1.1);opacity:0}100%{opacity:0}}
+@keyframes poke{0%,100%{transform:translate(0,0)}35%{transform:translate(-4px,-6px)}}
+.calm #finger svg,.calm #finger .ring{animation:none}.calm #finger .ring{opacity:.8}
+#fingerSay{position:fixed;z-index:61;pointer-events:none;display:none;background:var(--sumi);color:var(--ryoushi);font:800 16px var(--gothic);padding:6px 10px;white-space:nowrap}
+
+/* 札（モーダル） */
+.veil{position:fixed;inset:0;z-index:50;background:rgba(27,26,23,.55);display:none;align-items:center;justify-content:center;padding:12px}
+.veil.on{display:flex}
+.card{position:relative;background:var(--ryoushi);border:4px solid var(--sumi);box-shadow:10px 10px 0 var(--moegi-kage);width:min(560px,100%);max-height:calc(100dvh - 24px);overflow:auto;padding:16px 18px 18px}
+.card .tag{font:800 13px var(--gothic);letter-spacing:.2em;color:var(--moegi-kage)}
+.card h2{margin:4px 0 10px;font:900 clamp(20px,3.4vh,26px)/1.35 var(--mincho)}
+.card .ex{font:700 clamp(20px,3.2vh,26px)/1.4 var(--mincho);padding:8px 12px;border-left:6px solid var(--sumi);background:#e8e3d4;margin-bottom:8px}
+.card .ex .v{background:var(--moegi);padding:0 .1em}
+.card .ex .n{border-bottom:.14em solid var(--shu)}
+.steps{margin:0;padding:0;list-style:none}
+.steps li{font:700 clamp(16px,2.6vh,19px)/1.45 var(--gothic);padding:5px 0 5px 28px;position:relative;opacity:0;transform:translateX(-6px);transition:opacity .18s,transform .18s}
+.steps li::before{content:"";position:absolute;left:6px;top:13px;width:10px;height:10px;background:var(--sumi)}
+.steps li.on{opacity:1;transform:none}
+.ans{margin-top:8px;font:900 clamp(18px,3vh,23px)/1.4 var(--mincho);background:var(--moegi);padding:6px 12px;opacity:0;transition:opacity .2s}
+.ans.on{opacity:1}
+.skip{position:absolute;top:8px;right:8px;height:44px;padding:0 14px;border:3px solid var(--sumi);background:var(--ryoushi);font:800 15px var(--gothic)}
+.again{display:block;width:100%;margin-top:14px;height:64px;border:0;background:var(--sumi);color:var(--ryoushi);font:900 clamp(18px,3vh,22px) var(--gothic);box-shadow:6px 6px 0 var(--moegi-kage);opacity:.35}
+.again.ready{opacity:1}
+/* 押すと次へ（時間では消さない） */
+.tapnext{display:inline-block;margin-top:6px;padding:4px 12px;border:2px solid var(--sumi);font:800 15px var(--gothic);background:var(--ryoushi);animation:tapnx 1.4s ease-in-out infinite}
+@keyframes tapnx{0%,100%{opacity:1}50%{opacity:.45}}
+.calm .tapnext{animation:none}
+.tutcue{margin-top:6px;font:800 14px var(--gothic);color:var(--moegi-kage);text-align:right}
+/* ヘルプ */
+.tabs{display:flex;gap:6px;margin:4px 0 10px;flex-wrap:wrap}
+.tabs button{flex:1;min-width:84px;height:48px;border:3px solid var(--sumi);background:var(--ryoushi);font:800 15px var(--gothic)}
+.tabs button.on{background:var(--sumi);color:var(--ryoushi)}
+.howto p{font:700 17px/1.6 var(--gothic);margin:6px 0}
+.howto .k{display:inline-block;padding:0 6px;background:var(--moegi)}
+.howto .s{display:inline-block;border-bottom:3px solid var(--shu)}
+.lessonlist{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lessonlist button{min-height:56px;border:3px solid var(--sumi);background:var(--ryoushi);font:800 14.5px/1.3 var(--gothic);text-align:left;padding:6px 10px}
+.lessonlist button:active{background:var(--moegi)}
+table.hyo{border-collapse:collapse;font:700 14.5px var(--mincho);width:100%}
+.hyo th,.hyo td{border:2px solid var(--sumi);padding:4px 3px;text-align:center;white-space:nowrap}
+.hyo th{background:var(--sumi);color:var(--ryoushi);font-family:var(--gothic);font-size:12.5px}
+.hyo td.k{font-family:var(--gothic);font-weight:800;font-size:12.5px;text-align:left}
+.hyo tr.nx td{background:#e8e3d4}
+.scrollx{overflow-x:auto}
+.set{display:flex;gap:8px;flex-wrap:wrap}
+.set button{height:52px;padding:0 16px;border:3px solid var(--sumi);background:var(--ryoushi);font:800 16px var(--gothic)}
+.set button.on{background:var(--moegi)}
+.smallnote{font:500 13px/1.5 var(--gothic);color:#4a463d;margin-top:10px}
+
+/* 結果 */
+#result.on{display:grid;grid-template-columns:1fr auto;grid-template-rows:1fr auto;gap:12px 24px;padding:20px 6% 16px}
+#result .word{grid-column:2;grid-row:1;align-self:center;writing-mode:vertical-rl;font:900 clamp(56px,13vh,120px)/1 var(--mincho);background:var(--moegi);padding:.2em .1em;box-shadow:12px 12px 0 var(--moegi-kage)}
+#result .info{grid-column:1;grid-row:1;align-self:center;font:800 clamp(18px,3vh,24px)/1.6 var(--gothic)}
+#result .info .big{font:900 clamp(30px,6vh,52px) var(--mincho)}
+#result .foot{grid-column:1/3;grid-row:2;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* ガチャ */
+#gacha .tsutsu{position:absolute;left:50%;top:4%;height:52%;transform:translateX(-50%);transform-origin:50% 90%}
+#gacha .tsutsu.shake{animation:shake .5s ease-in-out 2}
+@keyframes shake{0%,100%{transform:translateX(-50%) rotate(0)}25%{transform:translateX(-50%) rotate(-12deg)}75%{transform:translateX(-50%) rotate(12deg)}}
+.calm #gacha .tsutsu.shake{animation:none}
+#gacha .say{position:absolute;left:12px;right:12px;top:58%;text-align:center;font:800 clamp(16px,2.6vh,20px)/1.5 var(--gothic)}
+#gacha .foot{position:absolute;left:12px;right:12px;bottom:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.fuda{margin-top:44px!important;display:flex;flex-direction:row-reverse;gap:14px;align-items:stretch;justify-content:center}
+.fuda .w{writing-mode:vertical-rl;font:900 clamp(40px,8vh,64px)/1.1 var(--mincho);padding:12px 8px;border:4px solid var(--sumi);background:var(--ryoushi)}
+.fuda .m{font:700 clamp(17px,2.8vh,21px)/1.6 var(--gothic);max-width:300px;align-self:center}
+.rank{display:inline-block;font:900 14px var(--gothic);padding:2px 8px;color:var(--ryoushi);background:var(--sumi);margin-bottom:6px}
+.rank.r1{background:var(--moegi);color:var(--sumi)}
+.rank.r2{background:var(--shu)}
+.cho{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.cho div{height:92px;border:2px solid var(--sumi);display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font:800 16px var(--mincho);background:var(--ryoushi);position:relative}
+.cho div.no{color:var(--usuzumi);background:#e3ded1}
+.cho div.r1{background:#dfe6c4}.cho div.r2{background:#f0d3c9}
+.cho div i{position:absolute;right:2px;bottom:2px;writing-mode:horizontal-tb;font:800 11px var(--gothic);font-style:normal}
+#coinpop{position:fixed;z-index:45;left:56px;top:46px;font:900 18px var(--gothic);color:var(--sumi);background:var(--moegi);padding:2px 8px;opacity:0;pointer-events:none}
+
+/* スマホ縦：段の巻を2段に */
+@media (max-aspect-ratio:3/4){
+  #map .row{flex-wrap:wrap;align-content:center;bottom:104px}
+  .dan{flex:1 1 28%;max-width:none;height:46%;padding:8px 2px}
+  .dan .what{display:none}
+  #title .tsuzumi{top:auto;bottom:40%;left:6%;width:38vw}
+  #result.on{grid-template-columns:1fr;grid-template-rows:auto auto 1fr;padding:14px 16px}
+  #result .word{grid-column:1;grid-row:1;justify-self:center;font-size:clamp(44px,8vh,80px)}
+  #result .info{grid-column:1;grid-row:2}
+  #result .foot{grid-column:1;grid-row:3;align-self:end}
+  #drum{display:none!important}
+}
+@media (max-height:520px){ .pad{height:84px} }
+</style>
+</head>
+<body>
+<div id="bar" class="t">
+  <button class="barbtn" id="quitBtn" aria-label="やめる">◀ やめる</button>
+  <button class="barbtn" id="homeBtn" aria-label="一覧へもどる">◀ もどる</button>
+  <div id="zeni" title="たまった文（お金）"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#C9A646" stroke="#F2EEE3" stroke-width="2"/><rect x="15" y="15" width="10" height="10" fill="#1B1A17"/><circle cx="20" cy="20" r="13" fill="none" stroke="#1B1A17" stroke-width="1.2" opacity=".5"/></svg><span id="zeniN">0</span><span style="font-size:13px">文</span></div>
+  <div class="ttl" id="barTtl">活用拍子</div>
+  <button class="barbtn" id="muteBtn" aria-label="音">音</button>
+  <button class="barbtn" id="helpBtn" aria-label="ヘルプ">？</button>
+</div>
+
+<!-- 表紙 -->
+<section class="screen on" id="title">
+  <div class="slab"></div>
+  <svg class="tsuzumi" viewBox="0 0 200 240" aria-hidden="true">
+    <ellipse cx="100" cy="30" rx="86" ry="22" fill="#F2EEE3" stroke="#1B1A17" stroke-width="6"/>
+    <ellipse cx="100" cy="210" rx="86" ry="22" fill="#F2EEE3" stroke="#1B1A17" stroke-width="6"/>
+    <path d="M40 46 Q100 120 40 194 M160 46 Q100 120 160 194" fill="none" stroke="#1B1A17" stroke-width="8"/>
+    <path d="M30 34 L60 206 M60 36 L90 208 M90 38 L120 208 M120 38 L150 206 M150 36 L170 200 M170 34 L140 206 M140 36 L110 208 M110 38 L80 208 M80 38 L50 206" stroke="#3E6B4C" stroke-width="3" fill="none"/>
+    <rect x="70" y="112" width="60" height="18" fill="#3E6B4C"/>
+  </svg>
+  <div class="big">活用拍子<small>かつようびょうし</small></div>
+  <div class="sub">下の語を見て、形を打つ。</div>
+  <button id="startBtn">打ちはじめる</button>
+</section>
+
+<!-- 段の巻 -->
+<section class="screen" id="map">
+  <div class="row" id="danRow"></div>
+  <div class="foot">
+    <button class="go main" id="toGacha">籤を引く</button>
+    <button class="go" id="toCho">札帳</button>
+  </div>
+</section>
+
+<!-- あそぶ -->
+<section class="screen" id="play">
+  <div id="phead"><span class="dn" id="pDan"></span><div id="dots"></div></div>
+  <div id="stage"><div class="band"></div><div id="stageIn"></div>
+    <svg id="drum" viewBox="0 0 60 60" aria-hidden="true"><ellipse cx="30" cy="10" rx="24" ry="7" fill="#F2EEE3" stroke="#1B1A17" stroke-width="3"/><ellipse cx="30" cy="50" rx="24" ry="7" fill="#F2EEE3" stroke="#1B1A17" stroke-width="3"/><path d="M12 15 Q30 30 12 45 M48 15 Q30 30 48 45" fill="none" stroke="#1B1A17" stroke-width="4"/><rect x="22" y="27" width="16" height="6" fill="#3E6B4C"/></svg>
+  </div>
+  <div id="ask"></div>
+  <div id="pads"></div>
+</section>
+
+<!-- 結果 -->
+<section class="screen" id="result">
+  <div class="word" id="rWord">すごい</div>
+  <div class="info" id="rInfo"></div>
+  <div class="foot" id="rFoot"></div>
+</section>
+
+<!-- ガチャ -->
+<section class="screen" id="gacha">
+  <svg class="tsutsu" id="tsutsu" viewBox="0 0 120 300" aria-hidden="true">
+    <rect x="70" y="2" width="8" height="70" fill="#C9B98F" stroke="#1B1A17" stroke-width="2" id="bou"/>
+    <path d="M24 60 L96 60 L90 290 L30 290 Z" fill="#3E6B4C" stroke="#1B1A17" stroke-width="5"/>
+    <rect x="22" y="52" width="76" height="16" fill="#1B1A17"/>
+    <rect x="34" y="120" width="52" height="110" fill="#F2EEE3" stroke="#1B1A17" stroke-width="3"/>
+    <text x="60" y="150" font-size="24" text-anchor="middle" font-family="serif" font-weight="900" fill="#1B1A17">古</text>
+    <text x="60" y="180" font-size="24" text-anchor="middle" font-family="serif" font-weight="900" fill="#1B1A17">語</text>
+    <text x="60" y="210" font-size="24" text-anchor="middle" font-family="serif" font-weight="900" fill="#1B1A17">籤</text>
+  </svg>
+  <div class="say" id="gSay"></div>
+  <div class="foot">
+    <button class="go main" id="pullBtn">1回引く（5文）</button>
+    <button class="go main" id="pull10">まとめて引く</button>
+    <button class="go" id="gCho">札帳</button>
+    <button class="go" id="gBack">段の巻へ</button>
+  </div>
+</section>
+
+<!-- ひと口手ほどき -->
+<div class="veil" id="tut"><div class="card">
+  <button class="skip" id="tutSkip">とばす</button>
+  <div class="tag">ひと口 手ほどき</div>
+  <h2 id="tutT"></h2>
+  <div class="ex" id="tutEx"></div>
+  <ul class="steps" id="tutSteps"></ul>
+  <div class="ans" id="tutA"></div>
+  <div class="tutcue" id="tutCue"></div>
+  <button class="again ready" id="tutGo">では、もう一度やってみよう！</button>
+</div></div>
+
+<!-- ヘルプ -->
+<div class="veil" id="help"><div class="card">
+  <button class="skip" id="helpClose">とじる</button>
+  <div class="tag">こまったら</div>
+  <div class="tabs" id="helpTabs">
+    <button data-t="how" class="on">遊び方</button><button data-t="book">こまったら帳</button><button data-t="hyo">活用表</button><button data-t="set">音・動き</button>
+  </div>
+  <div id="helpBody"></div>
+</div></div>
+
+<!-- やめる（確かめの札） -->
+<div class="veil" id="quitV"><div class="card">
+  <div class="tag">やめる</div>
+  <h2>やめますか？</h2>
+  <p id="quitMsg"></p>
+  <div class="qb"><button class="go" id="quitNo">つづける</button><button class="go main" id="quitYes">表紙へもどる</button></div>
+</div></div>
+
+<!-- 札帳 / 引いた札 -->
+<div class="veil" id="fudaV"><div class="card">
+  <button class="skip" id="fudaClose">とじる</button>
+  <div id="fudaBody"></div>
+</div></div>
+
+<canvas id="fxc"></canvas>
+<div id="kime"><span class="kl"></span><span class="kin"></span></div>
+<div id="pita">ぴたり</div>
+<div id="coinpop"></div>
+<div id="finger"><div class="ring"></div><svg viewBox="0 0 52 64"><path d="M18 4 C22 4 24 7 24 10 L24 28 L40 31 C46 32 48 36 47 41 L44 56 C43 60 40 62 36 62 L20 62 C16 62 14 60 12 57 L4 42 C2 38 4 35 8 35 C10 35 12 36 13 38 L13 10 C13 7 15 4 18 4 Z" fill="#F2EEE3" stroke="#1B1A17" stroke-width="3.5" stroke-linejoin="round"/><path d="M24 30 L24 40 M32 32 L32 40 M40 33 L40 41" stroke="#1B1A17" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+<div id="fingerSay"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   中身（出典は 成果物/study-game-maker/_作業_古文/メモ.md）
+   ============================================================ */
+const FORMS=["未然","連用","終止","連体","已然","命令"];
+const CHANT_NEXT=["ず","たり","。","とき","ども","。"];
+
+/* 活用表（ヘルプの「活用表」） */
+const HYO=[
+ ["四段","書く","書","か","き","く","く","け","け"],
+ ["上一段","見る","（見）","見","見","見る","見る","見れ","見よ"],
+ ["上二段","{起く|おく}","起","き","き","く","くる","くれ","きよ"],
+ ["下一段","{蹴る|ける}","（蹴）","蹴","蹴","蹴る","蹴る","蹴れ","蹴よ"],
+ ["下二段","{受く|うく}","受","け","け","く","くる","くれ","けよ"],
+ ["カ変","{来|く}","（来）","こ","き","く","くる","くれ","こ・こよ"],
+ ["サ変","す","（す）","せ","し","す","する","すれ","せよ"],
+ ["ナ変","死ぬ","死","な","に","ぬ","ぬる","ぬれ","ね"],
+ ["ラ変","あり","あ","ら","り","り","る","れ","れ"]
+];
+const NEXT_LIST=["ず・む・ば（もし〜なら）","て・けり・き・たり","。（ふつうに言い切る）","とき・こと・人など名詞","ども・ど・ば（〜ので・〜と）","。（〜しろ！と命じる）"];
+
+/* ひと口手ほどき（例題はどれもテストの問題と別の文） */
+const L={
+ katachi:{t:"形は「下の語」で決まる",ex:'<span class="v">書か</span><span class="n">ず</span>',st:["まず、すぐ下の語（赤い線）を見る","「ず」の上に来るのは 未然形","だから 書く → 書か になる"],a:"書か ＝ 未然形"},
+ yodan:{t:"四段は ア・イ・ウ・ウ・エ・エ",ex:"咲く を六つの形に",st:["咲か ず（ア段）","咲き たり（イ段）","咲く 。／咲く とき（ウ段が2つ）","咲け ども／咲け 。（エ段が2つ）"],a:"か・き・く・く・け・け"},
+ rahen:{t:"ラ変は、終止形が「り」",ex:"{をり|おり} を六つの形に（あり と同じ仲間）",st:["{をら|おら} ず","{をり|おり} たり","{をり|おり} 。 ← ここが四段とちがう（「る」にならない）","{をる|おる} とき／{をれ|おれ} ども／{をれ|おれ} 。"],a:"ら・り・り・る・れ・れ"},
+ mizen:{t:"「ず」「む」の上は 未然形",ex:'山を<span class="v">越え</span><span class="n">む</span>。',st:["下の語を見る →「む」（〜しよう・〜だろう）","「ず」「む」の上は 未然形"],a:"越え ＝ 未然形"},
+ renyo:{t:"「て」「けり」「き」「たり」の上は 連用形",ex:'海を<span class="v">見</span><span class="n">て</span>',st:["下の語を見る →「て」","「て」の上は 連用形","見 は形が同じでも、下の語で形が決まる"],a:"見 ＝ 連用形"},
+ shushi:{t:"「。」で ふつうに言い切るのが 終止形",ex:'水<span class="v">流る</span><span class="n">。</span>',st:["下は「。」で文が終わっている","命令（〜しろ！）ではない。ふつうに言い切っている"],a:"流る ＝ 終止形"},
+ rentai:{t:"名詞（ものの名前）の上は 連体形",ex:'<span class="v">流るる</span><span class="n">川</span>',st:["下の語を見る →「川」（ものの名前＝名詞）","「とき」「こと」「人」など名詞の上は 連体形","流る → 流るる と形も変わる"],a:"流るる ＝ 連体形"},
+ izen:{t:"「ども」「ど」の上は 已然形",ex:'戸を<span class="v">{叩|たた}け</span><span class="n">ども</span>',st:["下の語を見る →「ども」（〜けれども）","「ども」「ど」の上は 已然形"],a:"叩け ＝ 已然形"},
+ meirei:{t:"「〜しろ！」と命じて終わるのが 命令形",ex:'とく<span class="v">起きよ</span><span class="n">。</span>',st:["下は「。」","でも意味は「早く起きろ！」＝命じている","命令形は「よ」が付く仲間も多い（起きよ・見よ）"],a:"起きよ ＝ 命令形"},
+ ba:{t:"「ば」は、上の形で意味が変わる",ex:'花<span class="v">咲か</span><span class="n">ば</span>／花<span class="v">咲け</span><span class="n">ば</span>',st:["咲か＋ば（未然形）＝ もし咲いたら","咲け＋ば（已然形）＝ 咲くと・咲いたので","下が「ば」なら、上の語の終わりの音を見る"],a:"咲かば → 未然形 ／ 咲けば → 已然形"},
+ shuren:{t:"終止形と連体形は、同じ形のことがある",ex:'鐘<span class="v">鳴る</span><span class="n">。</span>／鐘<span class="v">鳴る</span><span class="n">夕べ</span>',st:["四段では 終止形と連体形が同じ形（鳴る・鳴る）","だから形ではなく、下の語で決める","下が「。」→ 終止形／下が名詞 → 連体形"],a:"鳴る。→ 終止形 ／ 鳴る夕べ → 連体形"},
+ oboe:{t:"まず「覚える組」にいるか探す",ex:"見る は どの仲間？",st:["上一段：{着|き}る・{似|に}る・{煮|に}る・{干|ひ}る・{見|み}る・{射|い}る・{鋳|い}る・{居|い}る・{率|い}る","下一段：{蹴|け}る／カ変：{来|く}／サ変：す・{おはす|おわす}","ナ変：{死|し}ぬ・{往|い}ぬ／ラ変：あり・{をり|おり}・はべり・いまそかり","見る は 上一段 の組にいる"],a:"見る ＝ 上一段（「ず」はつけなくていい）"},
+ shurui:{t:"「ず」をつけて、すぐ上の音を見る",ex:"{求む|もとむ} は どの仲間？",st:["覚える組にはいない","「ず」をつける → {求めず|もとめず}","「め」は エ段（え・け・せ・て・ね・へ・め…）","ア段→四段／イ段→上二段／エ段→下二段"],a:"求む ＝ 下二段"}
+};
+const BOOK_ORDER=["katachi","mizen","renyo","shushi","rentai","izen","meirei","ba","shuren","yodan","rahen","oboe","shurui"];
+
+/* 一の段：唱える */
+const CHANTS=[
+ {verb:"書く",stem:"書",ends:["か","き","く","く","け","け"],ch:["か","き","く","け"],demo:true,les:"yodan"},
+ {verb:"読む",stem:"読",ends:["ま","み","む","む","め","め"],ch:["ま","み","む","め"],demo:false,les:"yodan"},
+ {verb:"あり",stem:"あ",ends:["ら","り","り","る","れ","れ"],ch:["ら","り","る","れ"],demo:false,les:"rahen",note:"あり は少しちがう仲間（ラ変）。手本を聞いてから"}
+];
+/* 二の段：短い文（pre / v=答える語 / n=下の語 / post） */
+const S2=[
+ {pre:"歌を",v:"{詠|よ}み",n:"けり",post:"。",a:"連用"},
+ {pre:"文を",v:"書か",n:"ず",post:"。",a:"未然"},
+ {pre:"花",v:"咲か",n:"む",post:"。",a:"未然"},
+ {pre:"舟に",v:"乗り",n:"て",post:"行く。",a:"連用"},
+ {pre:"{京|きょう}へ",v:"行き",n:"たり",post:"。",a:"連用"},
+ {pre:"鳥",v:"鳴く",n:"。",post:"",a:"終止"},
+ {pre:"文を",v:"読む",n:"。",post:"",a:"終止"},
+ {pre:"人の",v:"行く",n:"とき",post:"",a:"連体"},
+ {pre:"月を",v:"待つ",n:"夜",post:"",a:"連体"},
+ {pre:"雨",v:"降れ",n:"ども",post:"、行く。",a:"已然"},
+ {pre:"とく",v:"書け",n:"。",post:"",a:"命令",note:"とく＝早く"},
+ {pre:"早く",v:"読め",n:"。",post:"",a:"命令"},
+ {pre:"月を",v:"見よ",n:"。",post:"",a:"命令",note:"見よ＝見ろ！"},
+ {pre:"風",v:"吹か",n:"ば",post:"、",a:"未然",ba:1},
+ {pre:"風",v:"吹け",n:"ば",post:"、",a:"已然",ba:1},
+ {pre:"人",v:"あり",n:"。",post:"",a:"終止"},
+ {pre:"人",v:"あり",n:"けり",post:"。",a:"連用"},
+ {pre:"",v:"ある",n:"人",post:"",a:"連体"},
+ {pre:"家に",v:"あれ",n:"ば",post:"",a:"已然",ba:1}
+];
+/* 三の段：名文 */
+const S3=[
+ {pre:"今は昔、竹取の{翁|おきな}と",v:"{いふ|いう}",n:"もの",post:"ありけり。",a:"連体",src:"竹取物語"},
+ {pre:"竹取の{翁|おきな}と{いふ|いう}もの",v:"あり",n:"けり",post:"。",a:"連用",src:"竹取物語"},
+ {pre:"野山に",v:"まじり",n:"て",post:"竹を取りつつ",a:"連用",src:"竹取物語"},
+ {pre:"ゆく河の流れは",v:"絶え",n:"ず",post:"して",a:"未然",src:"方丈記"},
+ {pre:"しかももとの水に",v:"あら",n:"ず",post:"。",a:"未然",src:"方丈記"},
+ {pre:"日暮らし、{硯|すずり}に",v:"{むかひ|むかい}",n:"て",post:"",a:"連用",src:"徒然草"},
+ {pre:"そこはかとなく",v:"書きつくれ",n:"ば",post:"",a:"已然",src:"徒然草",ba:1},
+ {pre:"{やうやう|ようよう}白く",v:"なりゆく",n:"{山ぎは|やまぎわ}",post:"",a:"連体",src:"枕草子",note:"山ぎは＝山と空の境目"},
+ {pre:"{山ぎは|やまぎわ}少し",v:"明かり",n:"て",post:"",a:"連用",src:"枕草子"},
+ {pre:"",v:"{行きかふ|ゆきかう}",n:"年",post:"もまた旅人なり。",a:"連体",src:"おくのほそ道"},
+ {pre:"名にし",v:"{負は|おわ}",n:"ば",post:"いざ{言問はむ|こととわむ}",a:"未然",src:"伊勢物語",ba:1},
+ {pre:"わが",v:"{思ふ|おもう}",n:"人",post:"はありやなしやと",a:"連体",src:"伊勢物語"},
+ {pre:"いざ、{かいもちひ|かいもちい}",v:"せ",n:"む",post:"。",a:"未然",src:"宇治拾遺物語"},
+ {pre:"{諸行無常|しょぎょうむじょう}の響き",v:"あり",n:"。",post:"",a:"終止",src:"平家物語"},
+ {pre:"女もして",v:"み",n:"む",post:"とて、するなり。",a:"未然",src:"土佐日記"}
+];
+/* 四の段：動詞の仲間 */
+const GROUPS=[
+ {id:"上一段",w:"{着|き}る {似|に}る {煮|に}る {干|ひ}る {見|み}る {射|い}る {鋳|い}る {居|い}る {率|い}る"},
+ {id:"下一段",w:"{蹴|け}る"},
+ {id:"カ変",w:"{来|く}"},
+ {id:"サ変",w:"す・{おはす|おわす}"},
+ {id:"ナ変",w:"{死|し}ぬ・{往|い}ぬ"},
+ {id:"ラ変",w:"あり・{をり|おり}・はべり・いまそかり"}
+];
+const S4=[
+ {verb:"{起く|おく}",k:"上二段",zu:["起かず","起きず","起けず"],z:1},
+ {verb:"見る",k:"上一段",sp:1},
+ {verb:"{受く|うく}",k:"下二段",zu:["受かず","受きず","受けず"],z:2},
+ {verb:"書く",k:"四段",zu:["書かず","書きず","書けず"],z:0},
+ {verb:"{来|く}",k:"カ変",sp:1},
+ {verb:"{過ぐ|すぐ}",k:"上二段",zu:["過がず","過ぎず","過げず"],z:1},
+ {verb:"死ぬ",k:"ナ変",sp:1},
+ {verb:"{思ふ|おもう}",k:"四段",zu:["思はず","思ひず","思へず"],z:0},
+ {verb:"{求む|もとむ}",k:"下二段",zu:["求まず","求みず","求めず"],z:2},
+ {verb:"あり",k:"ラ変",sp:1},
+ {verb:"{蹴る|ける}",k:"下一段",sp:1},
+ {verb:"す",k:"サ変",sp:1},
+ {verb:"{着る|きる}",k:"上一段",sp:1},
+ {verb:"はべり",k:"ラ変",sp:1},
+ {verb:"{往ぬ|いぬ}",k:"ナ変",sp:1},
+ {verb:"{おはす|おわす}",k:"サ変",sp:1}
+];
+/* 五の段：確認テスト（練習と別の文・教えたことだけ） */
+const TEST=[
+ {t:"f",pre:"花を",v:"見",n:"む",post:"。",a:"未然"},
+ {t:"f",pre:"馬より",v:"落ち",n:"て",post:"",a:"連用"},
+ {t:"f",pre:"歌を",v:"詠む",n:"。",post:"",a:"終止"},
+ {t:"f",pre:"花",v:"散る",n:"ころ",post:"",a:"連体"},
+ {t:"f",pre:"",v:"呼べ",n:"ども",post:"{答へず|こたえず}。",a:"已然"},
+ {t:"f",pre:"戸を",v:"開けよ",n:"。",post:"",a:"命令",note:"開く＝あける"},
+ {t:"f",pre:"雨",v:"降ら",n:"ば",post:"、",a:"未然",ba:1},
+ {t:"f",pre:"筒の中",v:"光り",n:"たり",post:"。",a:"連用",src:"竹取物語"},
+ {t:"f",pre:"よどみに",v:"浮かぶ",n:"うたかた",post:"は",a:"連体",src:"方丈記",note:"うたかた＝水の泡"},
+ {t:"k",verb:"{落つ|おつ}",k:"上二段",zu:["落たず","落ちず","落てず"],z:1},
+ {t:"k",verb:"{捨つ|すつ}",k:"下二段",zu:["捨たず","捨ちず","捨てず"],z:2},
+ {t:"k",verb:"{をり|おり}",k:"ラ変",sp:1}
+];
+/* 古語籤（並20・上6・特8＝枕詞） */
+const KOGO=[
+ ["いと","とても・たいそう",0],["をかし","趣がある・おもしろい",0,"おかし","「を」は「お」と読む"],["あはれ","しみじみとした趣・感動",0,"あわれ","言葉の途中の「は」は「わ」と読む"],["つれづれ","することがなく退屈なこと",0],
+ ["ありがたし","めったにない",0],["うつくし","かわいらしい",0],["ゆかし","見たい・聞きたい・知りたい",0],["あさまし","驚きあきれる",0],
+ ["めでたし","すばらしい",0],["いみじ","程度がはなはだしい",0],["おどろく","目を覚ます・はっと気づく",0],["ののしる","大声で騒ぐ",0],
+ ["やがて","そのまま・すぐに",0],["かなし","いとしい・かわいい",0],["あやし","不思議だ・身分が低い",0],["すさまじ","興ざめだ",0],
+ ["ながむ","物思いにふける",0],["まもる","じっと見つめる",0],["ゐる","座る",0,"いる","「ゐ」は「い」と読む"],["いぬ","去る（ナ変）",0],
+ ["こころもとなし","待ち遠しい・不安だ",1],["さうざうし","物足りない",1,"そうぞうし","「さう」「ざう」は「そう」「ぞう」と読む"],["はづかし","（相手が立派で）気がひける",1,"はずかし","「づ」は「ず」と読む"],["あくがる","心が体からさまよい出る",1],
+ ["ときめく","{寵愛|ちょうあい}（特別にかわいがられること）を受けて栄える",1],["なさけ","思いやり・風流を解する心",1],
+ ["あしひきの","{枕詞|まくらことば} →「山」にかかる",2],["ひさかたの","{枕詞|まくらことば} →「光」「天」にかかる",2],["ちはやぶる","{枕詞|まくらことば} →「神」にかかる",2],["たらちねの","{枕詞|まくらことば} →「母」にかかる",2],
+ ["ぬばたまの","{枕詞|まくらことば} →「黒」「夜」にかかる",2],["あをによし","{枕詞|まくらことば} →「奈良」にかかる",2,"あおによし","「を」は「お」と読む"],["しろたへの","{枕詞|まくらことば} →「衣」「袖」にかかる",2,"しろたえの","言葉の途中の「へ」は「え」と読む"],["くさまくら","{枕詞|まくらことば} →「旅」にかかる",2]
+];
+const RANKN=["並","上","特"];
+
+/* 段 */
+const DANS=[
+ {no:"一",nm:"唱える",what:"六つの形を、鼓に合わせて"},
+ {no:"二",nm:"下の語を見る",what:"短い文で見分ける"},
+ {no:"三",nm:"名文で見分ける",what:"竹取・方丈記・徒然草…"},
+ {no:"四",nm:"動詞の仲間",what:"四段・上二段・下二段…"},
+ {no:"五",nm:"確かめの段",what:"十二問の確認テスト"}
+];
+
+/* ============================================================
+   保存
+   ============================================================ */
+const KEY="kobun-katsuyo-v1";
+let SV={zeni:0,fuda:{},clear:{},mute:false,calm:false,seen:{}};
+try{const o=JSON.parse(localStorage.getItem(KEY)||"null");if(o)SV=Object.assign(SV,o);}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(SV));}catch(e){}}
+if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches&&SV.calm===false&&!SV._rm){SV.calm=true;SV._rm=1;}
+document.documentElement.classList.toggle("calm",!!SV.calm);
+
+/* ============================================================
+   音（Web Audio・最初のタップで準備・はじめは小さめ・外の音源は読み込まない）
+   ・時計は1本：BEAT（96拍/分）。鼓の手本・打つ拍・BGM はすべて AudioContext の時刻で鳴らす
+   ・BGM は雅楽の響き：笙（和音）・箏（つま弾き）・琵琶（低い弦）・龍笛（旋律）・太鼓・鞨鼓・鉦鼓
+   ============================================================ */
+let AC=null,MG=null,BG=null;
+function audio(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=SV.mute?0:0.16;MG.connect(AC.destination);mkBus();G.t0=null;}catch(e){AC=null;}}
+  if(AC&&AC.state==="suspended"&&!document.hidden)AC.resume(); }
+document.addEventListener("pointerdown",audio,{capture:true});
+document.addEventListener("visibilitychange",()=>{ if(!AC)return; if(document.hidden)AC.suspend(); else AC.resume(); });
+function mkBus(){ BG=AC.createGain(); BG.gain.value=0; BG.connect(MG);
+  try{ const cv=AC.createConvolver(),len=AC.sampleRate*2|0,ir=AC.createBuffer(2,len,AC.sampleRate);
+    for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2);}
+    cv.buffer=ir; const wet=AC.createGain(); wet.gain.value=.2; BG.connect(cv); cv.connect(wet); wet.connect(MG); }catch(e){} }
+function pan(node,p){ if(AC.createStereoPanner){const s=AC.createStereoPanner();s.pan.value=p;node.connect(s);return s;} return node; }
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+const SCALES={ritsu:[2,4,7,9,11],in:[2,3,7,9,10]};   // 律（D E G A B）／都節（D E♭ G A B♭）
+const KN_CACHE={};
+function kotoNotes(sc){ if(!KN_CACHE[sc]){const p=SCALES[sc],r=[];for(let m=50;m<=93;m++)if(p.includes(m%12))r.push(m);KN_CACHE[sc]=r;} return KN_CACHE[sc]; }
+function curScale(){ return (MOODS[G.mood]||MOODS.jo).sc; }
+
+/* 効果音 */
+function noise(d,f,type,vol,t0,dest,q){ if(!AC)return; const t=t0||AC.currentTime; const n=AC.sampleRate*d|0; const b=AC.createBuffer(1,n,AC.sampleRate),c=b.getChannelData(0); for(let i=0;i<n;i++)c[i]=(Math.random()*2-1)*(1-i/n);
+  const s=AC.createBufferSource();s.buffer=b;const fl=AC.createBiquadFilter();fl.type=type;fl.frequency.value=f;if(q)fl.Q.value=q;const g=AC.createGain();g.gain.value=vol;s.connect(fl);fl.connect(g);g.connect(dest||MG);s.start(t);}
+function pon(step,t0){ if(!AC)return; const t=t0||AC.currentTime; const KN=kotoNotes(curScale()); const f=mtof(KN[Math.min(3+(step||0),KN.length-1)])*(1+(Math.random()*.008-.004));
+  const o=AC.createOscillator(),g=AC.createGain();o.type="sine";o.frequency.setValueAtTime(f*1.7,t);o.frequency.exponentialRampToValueAtTime(f,t+.04);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.9,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+.38);o.connect(g);g.connect(MG);o.start(t);o.stop(t+.4);
+  noise(.03,2400,"bandpass",.5,t);}
+function tick(t){ if(!AC||SV.calm)return; noise(.012,5000,"highpass",.12,t);}
+function low(){ if(!AC)return; const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type="triangle";o.frequency.setValueAtTime(170,t);o.frequency.linearRampToValueAtTime(140,t+.16);
+  g.gain.setValueAtTime(.35,t);g.gain.exponentialRampToValueAtTime(.0001,t+.2);o.connect(g);g.connect(MG);o.start(t);o.stop(t+.22);}
+function chime(r){ if(!AC)return; const t=AC.currentTime; [880,1320,1760].slice(0,1+r).forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type="sine";o.frequency.value=f;
+  g.gain.setValueAtTime(.0001,t+i*.12);g.gain.exponentialRampToValueAtTime(.4,t+i*.12+.01);g.gain.exponentialRampToValueAtTime(.0001,t+i*.12+.7);o.connect(g);g.connect(MG);o.start(t+i*.12);o.stop(t+i*.12+.75);});}
+function rattle(){ if(!AC)return; for(let i=0;i<6;i++)noise(.04,1800,"bandpass",.4,AC.currentTime+i*.16);}
+
+/* ---------- 楽器 ---------- */
+let shoWave=null;
+function sho(notes,t,dur,vol){ vol*=1.25; // 笙：リードの倍音を持つ和音。息を吸っても吐いても鳴る＝ゆっくりふくらむ
+  if(!shoWave){const n=12,re=new Float32Array(n),im=new Float32Array(n),a=[0,1,.55,.6,.3,.35,.18,.2,.1,.1,.05,.05];for(let i=1;i<n;i++)im[i]=a[i];shoWave=AC.createPeriodicWave(re,im);}
+  const g=AC.createGain(),lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.setValueAtTime(1500,t); lp.frequency.linearRampToValueAtTime(2800,t+dur*.5); lp.frequency.linearRampToValueAtTime(1700,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol,t+1.6); g.gain.linearRampToValueAtTime(vol*.8,t+dur*.6); g.gain.linearRampToValueAtTime(vol,t+dur-.3); g.gain.linearRampToValueAtTime(.0001,t+dur+1.2);
+  lp.connect(g); pan(g,.15).connect(BG);
+  notes.forEach(m=>[-1,1].forEach(s=>{const o=AC.createOscillator();o.setPeriodicWave(shoWave);o.frequency.value=mtof(m);o.detune.value=s*3+(Math.random()*2-1);o.connect(lp);o.start(t);o.stop(t+dur+1.3);})); }
+const KS={};
+function ksBuf(m){ if(KS[m])return KS[m]; const sr=AC.sampleRate,f=mtof(m),N=Math.max(2,Math.round(sr/f-.5)),len=Math.floor(sr*(m<56?2.6:1.9));
+  const b=AC.createBuffer(1,len,sr),y=b.getChannelData(0); let pk=0;
+  for(let i=0;i<N;i++){ y[i]=(Math.random()*2-1)*(i<N*.5?1:.6); }          // 爪で弾いた所の形（少しかたよらせて箏らしい硬さ）
+  const dec=m<56?.9975:.9965;
+  for(let i=N;i<len;i++){ y[i]=dec*.5*(y[i-N]+(i-N-1>=0?y[i-N-1]:0)); }
+  for(let i=0;i<len;i++)pk=Math.max(pk,Math.abs(y[i])); for(let i=0;i<len;i++)y[i]/=pk||1;
+  return KS[m]={b,rate:f/(sr/(N+.5))}; }
+function koto(m,t,vol,bend,p,dest){ const k=ksBuf(m),s=AC.createBufferSource(),g=AC.createGain(); s.buffer=k.b; s.playbackRate.setValueAtTime(k.rate,t);
+  if(bend){ s.playbackRate.setValueAtTime(k.rate,t+.16); s.playbackRate.linearRampToValueAtTime(k.rate*Math.pow(2,bend/12),t+.34); } // 押し手（弦を押して音を上げる）
+  g.gain.value=vol*1.8; s.connect(g); pan(g,p===undefined?-.25:p).connect(dest||BG); s.start(t); s.stop(t+k.b.duration/k.rate*.98); }
+let NZ=null;
+function fue(m,t,dur,vol){ // 龍笛：下からすくい上げて入り、遅れてビブラート
+  const f=mtof(m),o=AC.createOscillator(),o2=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter(); o.type="triangle"; o2.type="sine"; lp.type="lowpass"; lp.frequency.value=3200;
+  [o,o2].forEach(x=>{x.frequency.setValueAtTime(f*Math.pow(2,-1.6/12),t);x.frequency.exponentialRampToValueAtTime(f,t+.16);});
+  const lfo=AC.createOscillator(),lg=AC.createGain(); lfo.frequency.value=5.3; lg.gain.setValueAtTime(0,t); lg.gain.linearRampToValueAtTime(f*.007,t+Math.min(dur,1)); lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency);
+  g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol,t+.09); g.gain.linearRampToValueAtTime(vol*1.15,t+dur*.7); g.gain.linearRampToValueAtTime(.0001,t+dur+.12);
+  o.connect(lp); o2.connect(lp); lp.connect(g); const out=pan(g,.3); out.connect(BG);
+  if(!NZ){NZ=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);const c=NZ.getChannelData(0);for(let i=0;i<c.length;i++)c[i]=Math.random()*2-1;}
+  const n=AC.createBufferSource(),bp=AC.createBiquadFilter(),ng=AC.createGain(); n.buffer=NZ; n.loop=true; bp.type="bandpass"; bp.frequency.value=f*2; bp.Q.value=1.5;
+  ng.gain.setValueAtTime(.0001,t); ng.gain.linearRampToValueAtTime(vol*.5,t+.05); ng.gain.linearRampToValueAtTime(vol*.12,t+.3); ng.gain.linearRampToValueAtTime(.0001,t+dur+.1);
+  n.connect(bp); bp.connect(ng); ng.connect(out);
+  [o,o2,lfo,n].forEach(x=>{x.start(t);x.stop(t+dur+.2);}); }
+function taiko(t,v){ v*=.55; const o=AC.createOscillator(),g=AC.createGain(); o.type="sine"; o.frequency.setValueAtTime(118,t); o.frequency.exponentialRampToValueAtTime(52,t+.28);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(v,t+.008); g.gain.exponentialRampToValueAtTime(.0001,t+.8); o.connect(g); g.connect(BG); o.start(t); o.stop(t+.85);
+  noise(.06,500,"lowpass",v*.6,t,BG); }
+function kakko(t,v){ noise(.025,2600,"bandpass",v,t,BG,2.5); const o=AC.createOscillator(),g=AC.createGain(); o.frequency.value=780; g.gain.setValueAtTime(v*.25,t); g.gain.exponentialRampToValueAtTime(.0001,t+.05); o.connect(g); g.connect(BG); o.start(t); o.stop(t+.06); }
+function kakkoRoll(t,d,v){ const n=9; for(let i=0;i<n;i++) kakko(t+d*Math.sqrt(i/n),v*(.55+.45*i/n)); } // 鞨鼓の「来（らい）」：だんだん速くなる打ち
+function shoko(t,v,dest){ [[1190,.7],[2930,.35],[4410,.22]].forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v*(f<2000?1:.5),t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);pan(g,-.1).connect(dest||BG);o.start(t);o.stop(t+d+.05);}); }
+
+/* ---------- 曲の設計 ---------- */
+// 笙の和音（合竹のように、音階の音を重ねた響き）。2小節ごとに替わる。r＝琵琶の低い音
+const CL={
+ ritsu:[{n:[69,74,76,81],r:[50,57],a:5},{n:[74,76,81,83],r:[52,59],a:6},{n:[71,76,79,81,86],r:[43,50],a:4},{n:[76,81,83,86,88],r:[45,52],a:8}],
+ in:[{n:[69,74,75,79],r:[50,57],a:5},{n:[70,74,79,81],r:[46,58],a:4},{n:[67,74,75,81],r:[43,50],a:2},{n:[74,79,81,86],r:[45,57],a:3}]
+};
+// 箏の型（8分音符×8＝1小節。数字は和音ごとの起点からの音階の段・null は休み）
+const KP={
+ pulse:[[0,null,2,4,5,null,4,2],[0,null,2,null,4,5,7,null],[0,2,4,2,5,4,2,null],[7,5,4,2,0,null,2,null]],
+ arp:[[0,2,4,7,null,4,2,null],[2,4,7,9,null,7,4,null],[0,null,4,7,5,null,4,null],[4,2,0,null,2,4,null,null]],
+ slow:[[0,null,null,null,4,null,null,null],[2,null,null,null,null,null,5,null],[0,null,null,null,null,null,null,null],[4,null,null,2,null,null,0,null]],
+ sync:[[0,null,null,2,null,null,4,null],[null,5,null,4,null,2,null,0],[0,null,null,2,null,4,5,null],[null,null,7,null,5,null,4,2]],
+ sparse:[[0,null,null,null,null,null,null,null],[null,null,null,null,1,null,null,null],[0,null,null,null,null,null,2,null],[null,null,3,null,null,null,1,null]],
+ kira:[[5,null,null,7,null,null,null,null],[null,null,4,null,null,null,6,null],[7,null,null,null,5,null,null,null],[null,null,null,9,null,7,null,null]]
+};
+// 龍笛の旋律（律の音の番号, 長さ＝8分音符いくつ）。4小節＝32
+const MEL=[
+ [[10,6],[11,2],[12,8],[null,4],[13,4],[12,4],[11,4]],
+ [[12,4],[13,2],[12,2],[11,8],[10,4],[8,4],[10,8]],
+ [[null,8],[13,6],[14,2],[13,4],[12,4],[11,8]],
+ [[11,4],[10,4],[8,8],[null,4],[8,2],[10,2],[11,8]]
+];
+// 場面ごとの表情
+const MOODS={
+ jo:   {sc:"ritsu",sho:.020,kp:"slow",  kv:.30,mel:"sparse",dr:"jo",  lv:.85,biwa:1},   // 表紙・段の巻：序
+ d1:   {sc:"ritsu",sho:.014,kp:"pulse", kv:.28,mel:null,    dr:"d1",  lv:.85,biwa:1},   // 一 唱える：拍がはっきり
+ d2:   {sc:"ritsu",sho:.015,kp:"arp",   kv:.28,mel:null,    dr:"d2",  lv:.9},           // 二 短い文：軽い分散
+ d3:   {sc:"ritsu",sho:.018,kp:"slow",  kv:.24,mel:"full",  dr:"jo",  lv:.85, biwa:1},   // 三 名文：龍笛が歌う
+ d4:   {sc:"ritsu",sho:.013,kp:"sync",  kv:.28,mel:null,    dr:"d4",  lv:.8},           // 四 仲間：裏拍の多い型
+ test: {sc:"in",   sho:.016,kp:"sparse",kv:.26,mel:null,    dr:"test",lv:.8},          // 五 テスト：都節で張りつめる
+ kekka:{sc:"ritsu",sho:.020,kp:"slow",  kv:.24,mel:"sparse",dr:"none",lv:.8, biwa:1},
+ kuji: {sc:"ritsu",sho:.016,kp:"kira",  kv:.28,mel:null,    dr:"kuji",lv:.95}
+};
+const BEAT=0.625,EIGHTH=BEAT/2;
+let G={t0:null,step:0,nextT:0,mood:"jo",duck:-1,melOrder:[0,1,2,3]};
+function clk(){ return AC?AC.currentTime:performance.now()/1000; }
+function wantMood(){ if(cur==="play"&&P) return ["","d1","d2","d3","d4","test"][P.dan]||"d1"; return {result:"kekka",gacha:"kuji"}[cur]||"jo"; }
+function nextBeatAt(minAhead){ if(G.t0===null)sched(); const t=clk()+(minAhead||0); return G.t0+Math.ceil((t-G.t0)/BEAT)*BEAT; }
+function beatDist(){ if(G.t0===null)return 9; const lat=AC?(AC.outputLatency||AC.baseLatency||0):0; let ph=((clk()-lat-G.t0)/BEAT)%1; ph=(ph+1)%1; return Math.min(ph,1-ph)*BEAT; }
+function bgmStep(s,t){ const M=MOODS[G.mood]||MOODS.jo, think=cur==="play"&&P&&P.thinking;
+  const bar=Math.floor(s/8),pos=s%8,cy=bar%16,KN=kotoNotes(M.sc),c=CL[M.sc][Math.floor(bar/2)%4];
+  const hum=()=>(Math.random()*2-1)*.006;
+  if(pos===0&&bar%2===0){ sho(c.n,t,EIGHTH*16,M.sho);
+    if(M.biwa){ koto(c.r[0],t,M.kv*.9,0,0); koto(c.r[1],t+.06,M.kv*.7,0,0); koto(KN[c.a+2],t+.12,M.kv*.45,0,0); } } // 琵琶：和音の替わり目に低い弦をかき鳴らす
+  // 箏
+  const fill=(M.kp==="pulse"||M.kp==="arp"||M.kp==="sync")&&cy===15&&pos>=4;
+  if(fill){ if(pos===4) for(let i=0;i<6;i++){const k=Math.max(0,Math.min(KN.length-1,c.a+9-i));koto(KN[k],t+i*BEAT/6,M.kv*(1-i*.08));} } // 流し：一拍で駆け下りる
+  else { if(pos===0||G.kvar===undefined) G.kvar=(bar%8>=4&&Math.random()<.35)?(bar%4+1+(Math.random()*3|0))%4:bar%4;  // 後半の4小節はときどき型を入れかえて飽きさせない
+    const d=KP[M.kp][G.kvar][pos];
+    if(d!==null&&Math.random()>.06){ const k=Math.max(0,Math.min(KN.length-1,c.a+d)); const acc=pos===0?1.15:pos%2?.8:1;
+      koto(KN[k],t+hum(),M.kv*acc*(.85+Math.random()*.3), (M.kp==="slow"&&pos===0&&bar%4===3)?(SCALES[M.sc].includes((KN[k]+2)%12)?2:0):0);
+      if(M.kp==="slow"&&pos===0&&bar%2===0) koto(KN[Math.min(KN.length-1,k+5)],t+.03,M.kv*.55); } } // 合わせ爪（オクターブ）
+  // 龍笛
+  if(M.mel&&pos===0&&bar%4===0){ const blk=Math.floor(bar/4)%4; if(blk===0)G.melOrder=shuffle([0,1,2,3]);
+    const play=M.mel==="full"?blk<3:(blk===1||blk===2);
+    if(play){ let u=0; MEL[G.melOrder[blk]].forEach(([k,l])=>{ if(k!==null) fue(KN[k],t+u*EIGHTH,l*EIGHTH*.96,.045); u+=l; }); } }
+  // 打ちもの（考える間は鳴らさない）
+  if(think)return;
+  const dr=M.dr;
+  if(dr==="jo"){ if(pos===0&&bar%4===0)taiko(t,.32); if(pos===0&&bar%4===2)shoko(t,.05); }
+  else if(dr==="d1"){ if(pos===0)taiko(t,.42); if(pos===4&&bar%2)taiko(t,.2); if(pos===2||pos===6)kakko(t,.18); if(pos===4&&bar%2)kakkoRoll(t,BEAT*.9,.16);
+    if(pos===0&&bar%2===0){shoko(t,.03);shoko(t+.16,.05);} }
+  else if(dr==="d2"){ if(pos===0&&bar%2===0)shoko(t,.045); if(pos===0&&bar%4===0)taiko(t,.28); if(pos===4)kakko(t,.12); }
+  else if(dr==="d4"){ if(pos===0)taiko(t,.3); if(pos===3)taiko(t,.17); if(pos===6)taiko(t,.22); if(pos===2||pos===5)kakko(t,.15); if(pos===4&&bar%4===3)kakkoRoll(t,BEAT*.9,.15); }
+  else if(dr==="test"){ if(pos===0){taiko(t,.26);taiko(t+.2,.14);} if(pos===4&&bar%2)kakko(t,.08); }   // 胸の鼓動のような二つ打ち
+  else if(dr==="kuji"){ if(pos===0)shoko(t,.035); if(pos===4&&bar%2)kakkoRoll(t,BEAT*.9,.12); }
+}
+function step(s,t){ const pos=s%8;
+  if(pos===0)G.mood=wantMood();   // 曲の表情は小節の頭で替える
+  // 一の段・あなたの番：BGMと同じ時刻に拍を打つ
+  if(pos%2===0&&cur==="play"&&P&&P.items[P.idx]&&P.items[P.idx].t==="c"&&CH&&CH.phase==="you"){ tick(t); setTimeout(drumBeat,Math.max(0,(t-clk())*1000)); }
+  if(AC&&BG&&!SV.mute&&!SV.bgmOff) bgmStep(s,t); }
+function sched(){ const now=clk();
+  if(G.t0===null){ G.t0=now+.12; G.step=0; G.nextT=G.t0; }
+  if(G.nextT<now-.2){ G.step=Math.ceil((now-G.t0)/EIGHTH); G.nextT=G.t0+G.step*EIGHTH; }   // 裏に回って遅れたら、まとめ鳴らしせずに追いつく
+  while(G.nextT<now+.15){ step(G.step,G.nextT); G.step++; G.nextT=G.t0+G.step*EIGHTH; }
+  if(BG){ const M=MOODS[G.mood]||MOODS.jo; let d=1; if(document.querySelector(".veil.on"))d=.25; else if(cur==="play"&&P&&P.thinking)d=.45;
+    const tg=(SV.bgmOff?0:M.lv*d); if(Math.abs(tg-G.duck)>.001){G.duck=tg;BG.gain.setTargetAtTime(tg,AC.currentTime,.3);} } }
+setInterval(sched,25);
+
+/* ============================================================
+   小道具
+   ============================================================ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* 読み：データは {語|よみ} で書く。ruby＝ふりがなにする／rb＝文字を守ってふりがな／plain＝語だけ */
+const ruby=s=>String(s).replace(/\{([^|{}]+)\|([^{}]+)\}/g,'<ruby>$1<rt>$2</rt></ruby>');
+const rb=s=>ruby(esc(s));
+const plain=s=>String(s).replace(/\{([^|{}]+)\|([^{}]+)\}/g,"$1");
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+let timers=[];function later(fn,ms){const id=setTimeout(fn,ms);timers.push(id);return id;}
+function clearTimers(){timers.forEach(clearTimeout);timers=[];waitNext=null;fingerStep=null;}
+/* 答え・説明は時間で消さない。「どこを押しても次へ」で待つ（2026-10-07 社長） */
+let waitNext=null,fingerStep=null;
+function armNext(fn,cue){ waitNext=null; if(P)P.thinking=false;
+  if(cue!==false) $("#ask").insertAdjacentHTML("beforeend",'<br><span class="tapnext">▶ どこを押しても次へ</span>');
+  later(()=>{waitNext=fn;},0); }   // 答えを打った同じタップで進まないよう、次のタップから受けつける
+document.addEventListener("click",e=>{ if(e.target.closest(".veil,#bar"))return;
+  if(fingerStep&&!e.target.closest("#pads")){ const f=fingerStep; fingerStep=null; f(); return; }
+  if(waitNext){ const f=waitNext; waitNext=null; f(); } });
+document.addEventListener("keydown",e=>{ if((e.key==="Enter"||e.key===" ")&&waitNext&&!document.querySelector(".veil.on")){ e.preventDefault(); const f=waitNext; waitNext=null; f(); } });
+function updZeni(){$("#zeniN").textContent=SV.zeni;}
+function earn(n,why){SV.zeni+=n;save();updZeni();const p=$("#coinpop");p.textContent="+"+n+"文"+(why?" "+why:"");
+  p.animate([{opacity:0,transform:"translateY(6px)"},{opacity:1,transform:"none",offset:.2},{opacity:1,offset:.75},{opacity:0,transform:"translateY(-6px)"}],{duration:1100});}
+function padHTML(label,cls){return '<button class="pad '+(cls||"")+'"><span class="vt">'+label+'</span></button>';}
+function pressable(el,fn){el.addEventListener("pointerdown",e=>{el.classList.add("down");});
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>el.addEventListener(ev,()=>el.classList.remove("down")));
+  el.addEventListener("click",fn);}
+
+/* ============================================================
+   正解の舞（2026-10-07 社長「正解後の演出が短過ぎて勿体無い」）
+   ・正解の瞬間に札が叩きつけられ、墨がしぶく → 次の拍から鼓の決め打ち（BGMと同じ時計）
+   ・連続正解で段が上がる：一 鼓2打／二 3打＋箏の駆け上がり＋短冊が舞う／三 4打＋扇が開く／四 5打＋二つ打ち＋金粉の雨
+   ・どこを押しても飛ばして次へ（理由の文は下に残る）
+   ============================================================ */
+const FX={parts:[],fan:null,raf:0,last:0,timers:[],bus:null};
+const fxc=document.getElementById("fxc"), fxx=fxc.getContext("2d");
+function fxSize(){ const d=Math.min(2,window.devicePixelRatio||1); fxc.width=innerWidth*d|0; fxc.height=innerHeight*d|0; fxx.setTransform(d,0,0,d,0,0); }
+fxSize(); addEventListener("resize",fxSize);
+const KAN="〇一二三四五六七八九";
+function kan(n){ if(n<10)return KAN[n]; const a=Math.floor(n/10),b=n%10; return (a>1?KAN[a]:"")+"十"+(b?KAN[b]:""); }
+function tierOf(s){ return s>=8?4:s>=5?3:s>=3?2:1; }
+function fxBus(){ if(!AC)return null; if(FX.bus){try{FX.bus.disconnect();}catch(e){}} FX.bus=AC.createGain(); FX.bus.connect(MG); return FX.bus; }
+function fxStop(){ FX.timers.forEach(clearTimeout); FX.timers=[]; FX.parts=[]; FX.fan=null; if(FX.raf){cancelAnimationFrame(FX.raf);FX.raf=0;}
+  if(FX.bus&&AC){ const b=FX.bus; FX.bus=null; b.gain.setTargetAtTime(0,AC.currentTime,.015); setTimeout(()=>{try{b.disconnect();}catch(e){}},200); }
+  const k=$("#kime"); k.getAnimations().forEach(a=>a.cancel()); k.querySelector(".kin").getAnimations().forEach(a=>a.cancel()); k.style.opacity=0;
+  fxx.clearRect(0,0,innerWidth,innerHeight); }
+/* 鼓の音（効果の層。BGMとは別の線で鳴らし、飛ばしたら止める） */
+function kotsuzumi(t,v,d){ // 小鼓の「ポン」：張った皮が鳴って少し下がる
+  [[1,1],[2.25,.35],[3.1,.15]].forEach(([m,a])=>{ const o=AC.createOscillator(),g=AC.createGain(); o.type="sine"; o.frequency.setValueAtTime(330*m*1.12,t); o.frequency.exponentialRampToValueAtTime(330*m,t+.05);
+    g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(v*a,t+.005); g.gain.exponentialRampToValueAtTime(.0001,t+.45/m); o.connect(g); g.connect(d); o.start(t); o.stop(t+.5); });
+  noise(.03,1800,"bandpass",v*.5,t,d,1.5); }
+function ookawa(t,v,d){ // 大鼓の「カン」：乾いた鋭い打ち
+  noise(.05,3200,"bandpass",v,t,d,3); const o=AC.createOscillator(),g=AC.createGain(),f=AC.createBiquadFilter(); o.type="square"; o.frequency.value=1250; f.type="bandpass"; f.frequency.value=1250; f.Q.value=4;
+  g.gain.setValueAtTime(v*.2,t); g.gain.exponentialRampToValueAtTime(.0001,t+.07); o.connect(f); f.connect(g); g.connect(d); o.start(t); o.stop(t+.08); }
+/* 粒 */
+function fxLayer(top){ fxc.style.zIndex=top?55:29; } // 札の幕（z50）の上に出すのは籤のときだけ
+function fxAdd(p){ if(FX.parts.length<320) FX.parts.push(p); }
+const GOLD=["#C9A646","#E3C66B","#A8842C","#F0DC9A"];
+function inkBurst(x,y,n,sp){ for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2,v=(.4+Math.random())*sp; fxAdd({k:"ink",x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v*.75,r:1.5+Math.random()*5.5,life:0,max:.45+Math.random()*.4}); } }
+function goldBurst(x,y,n,sp){ for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2,v=(.3+Math.random())*sp; fxAdd({k:"gold",x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-sp*.5,s:3+Math.random()*5,ph:Math.random()*6,sp:6+Math.random()*10,c:GOLD[i%4],life:0,max:1.3+Math.random()*.9}); } }
+function goldRain(n){ for(let i=0;i<n;i++) fxAdd({k:"gold",x:Math.random()*innerWidth,y:-10-Math.random()*innerHeight*.4,vx:(Math.random()-.5)*40,vy:60+Math.random()*120,s:3+Math.random()*5,ph:Math.random()*6,sp:6+Math.random()*10,c:GOLD[i%4],life:0,max:2.2+Math.random()*.8}); }
+function tanzaku(n){ const C=["#8AA234","#F2EEE3","#C8452C","#E3C66B"]; for(let i=0;i<n;i++){ const left=i%2===0, x=left?-10:innerWidth+10;
+  fxAdd({k:"tan",x,y:innerHeight*(.55+Math.random()*.4),vx:(left?1:-1)*(160+Math.random()*320),vy:-(520+Math.random()*420),w:10+Math.random()*5,h:34+Math.random()*16,rot:Math.random()*6,vr:(Math.random()-.5)*8,ph:Math.random()*6,c:C[i%4],life:0,max:2.0+Math.random()*.6}); } }
+function fxStep(p,dt){
+  if(p.k==="ink"){ p.vx*=Math.pow(.02,dt); p.vy*=Math.pow(.02,dt); p.vy+=300*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; }
+  else if(p.k==="gold"){ p.vx*=Math.pow(.12,dt); p.vy+=420*dt; p.vy*=Math.pow(.18,dt); p.vy=Math.min(p.vy,140); p.x+=p.vx*dt+Math.sin(p.life*3+p.ph)*20*dt; p.y+=p.vy*dt; }
+  else if(p.k==="tan"){ p.vx*=Math.pow(.25,dt); p.vy+=900*dt; if(p.vy>90)p.vy=90; p.x+=p.vx*dt+(p.vy>0?Math.sin(p.life*3.2+p.ph)*70*dt:0); p.y+=p.vy*dt; p.rot+=p.vr*dt*(p.vy>0?.4:1); } }
+function fxDraw(p){ const c=fxx, f=1-p.life/p.max;
+  if(p.k==="ink"){ c.globalAlpha=Math.min(1,f*1.6); c.strokeStyle="#1B1A17"; c.lineCap="round"; c.lineWidth=p.r; c.beginPath(); c.moveTo(p.x-p.vx*.035,p.y-p.vy*.035); c.lineTo(p.x,p.y); c.stroke(); }
+  else if(p.k==="gold"){ c.globalAlpha=Math.min(1,f*2.5); c.fillStyle=p.c; const w=p.s*Math.abs(Math.cos(p.life*p.sp+p.ph)); c.save(); c.translate(p.x,p.y); c.rotate(p.ph); c.fillRect(-w/2,-p.s/2,w+.6,p.s); c.restore(); }
+  else if(p.k==="tan"){ c.globalAlpha=Math.min(1,f*3); c.save(); c.translate(p.x,p.y); c.rotate(p.rot); const w=p.w*(.35+.65*Math.abs(Math.cos(p.life*2.4+p.ph))); c.fillStyle=p.c; c.fillRect(-w/2,-p.h/2,w,p.h); c.strokeStyle="#1B1A17"; c.lineWidth=1.5; c.strokeRect(-w/2,-p.h/2,w,p.h); c.restore(); }
+  else if(p.k==="ring"){ const e=p.life/p.max; c.globalAlpha=(1-e)*.9; c.strokeStyle="#1B1A17"; c.lineWidth=Math.max(1,10*(1-e)); c.beginPath(); c.ellipse(p.x,p.y,p.R*(.25+.75*Math.sqrt(e)),p.R*.55*(.25+.75*Math.sqrt(e)),0,0,Math.PI*2); c.stroke(); }
+  c.globalAlpha=1; }
+function fxDrawFan(now){ const F=FX.fan,age=(now-F.t0)/1000; if(age>F.max){FX.fan=null;return;}
+  const c=fxx, open=Math.min(1,age/.3), A=Math.PI*.92*(1-Math.pow(1-open,3)), n=12, fade=Math.min(1,(F.max-age)/.35);
+  c.save(); c.globalAlpha=fade; c.translate(F.x,F.y);
+  for(let i=0;i<n;i++){ const a0=-Math.PI/2-A/2+A*i/n, a1=a0+A/n; c.beginPath(); c.moveTo(Math.cos(a0)*F.R*.32,Math.sin(a0)*F.R*.32); c.arc(0,0,F.R,a0,a1); c.arc(0,0,F.R*.32,a1,a0,true); c.closePath();
+    c.fillStyle=i%2?"#C9A646":"#8AA234"; c.fill(); c.strokeStyle="#1B1A17"; c.lineWidth=2.5; c.stroke(); }
+  c.lineWidth=3; c.strokeStyle="#1B1A17"; c.beginPath(); for(let i=0;i<=n;i++){ const a=-Math.PI/2-A/2+A*i/n; c.moveTo(0,0); c.lineTo(Math.cos(a)*F.R*.32,Math.sin(a)*F.R*.32); } c.stroke();
+  c.fillStyle="#1B1A17"; c.beginPath(); c.arc(0,0,7,0,Math.PI*2); c.fill(); c.restore(); }
+function fxRun(){ if(FX.raf)return; FX.last=performance.now();
+  const loop=now=>{ const dt=Math.min(.05,(now-FX.last)/1000); FX.last=now; fxx.clearRect(0,0,innerWidth,innerHeight);
+    if(FX.fan) fxDrawFan(now);
+    FX.parts=FX.parts.filter(p=>{ p.life+=dt; if(p.life>p.max||p.y>innerHeight+80)return false; fxStep(p,dt); fxDraw(p); return true; });
+    if(FX.parts.length||FX.fan) FX.raf=requestAnimationFrame(loop); else { FX.raf=0; fxx.clearRect(0,0,innerWidth,innerHeight); } };
+  FX.raf=requestAnimationFrame(loop); }
+
+function celebrate(txt,streak,big){ fxStop(); fxLayer(false);
+  const tier=big?Math.max(3,tierOf(streak)):tierOf(streak), hits=Math.min(4,tier+1), calm=SV.calm;
+  const k=$("#kime"),kin=k.querySelector(".kin"),kl=k.querySelector(".kl");
+  kin.textContent=txt; kin.style.fontSize=txt.length>7?"clamp(22px,4.6vh,40px)":"";
+  kl.textContent=streak>=2?kan(streak)+"連"+(tier>=4?"　あっぱれ":tier>=3?"　見事":""):""; kl.style.display=kl.textContent?"":"none";
+  const t1=nextBeatAt(.16), tLast=t1+(hits-1)*BEAT+(tier>=4?BEAT/2:0), tEnd=tLast+(tier>=3?.95:.7);
+  const ms=t=>Math.max(0,(t-clk())*1000), dur=ms(tEnd);
+  // 音：鼓の決め打ち（ポン・カン・ポン…）を拍の上に。二から箏の駆け上がり、三から鉦鼓
+  const bus=fxBus();
+  if(bus){ for(let i=0;i<hits;i++){ const t=t1+i*BEAT, last=i===hits-1; if(i%2===0)kotsuzumi(t,last?.85:.6,bus); else ookawa(t,.65,bus);
+      if(last&&tier>=3)shoko(t+.02,.06,bus); }
+    if(tier>=4){ kotsuzumi(tLast,.9,bus); ookawa(tLast+.03,.7,bus); }
+    if(tier>=2){ const KN=kotoNotes(curScale()); for(let i=0;i<7;i++) koto(KN[Math.min(KN.length-1,7+i)],t1+BEAT+i*BEAT/7,.3,0,0,bus); } }
+  // 札：叩きつけて止まり、打つたびに震え、最後に消える（理由の文は下に残る）
+  const rot=calm?"":" rotate(-6deg) skewX(-8deg)", base="translate(-50%,-50%)";
+  k.animate(calm?[{opacity:1},{opacity:1,offset:.9},{opacity:0}]:
+    [{opacity:1,transform:base+" scale(1.6)"+rot},{opacity:1,transform:base+" scale(.94)"+rot,offset:Math.min(.2,90/dur)},{opacity:1,transform:base+" scale(1)"+rot,offset:Math.min(.3,160/dur)},{opacity:1,transform:base+" scale(1)"+rot,offset:.88},{opacity:0,transform:base+" scale(1.08)"+rot}],
+    {duration:dur,fill:"forwards",easing:"linear"});
+  if(calm) return;
+  const r=k.getBoundingClientRect(), cx=innerWidth/2, cy=innerHeight*.44;
+  inkBurst(cx,cy,14+tier*6,520); goldBurst(cx,cy,8+tier*4,380);
+  if(tier>=3) FX.fan={x:cx,y:cy+Math.max(30,r.height*.35),R:Math.min(innerWidth*.42,260),t0:performance.now(),max:dur/1000};
+  fxRun();
+  const band=document.querySelector("#stage .band");
+  for(let i=0;i<hits;i++){ const t=t1+i*BEAT, last=i===hits-1;
+    FX.timers.push(setTimeout(()=>{ kin.animate([{transform:"scale(1.1)"},{transform:"scale(1)"}],{duration:150,easing:"ease-out"});
+      fxAdd({k:"ring",x:cx,y:cy,life:0,max:.5,R:Math.max(220,r.width*1.1)}); inkBurst(cx,cy,6+tier*2,420); goldBurst(cx,cy,6+tier*5,340);
+      if(i===1&&tier>=2) tanzaku(6+tier*4);
+      if(last&&tier>=4) goldRain(90);
+      if(band&&cur==="play") band.animate([{opacity:.22},{opacity:.6},{opacity:.22}],{duration:240});
+      fxRun(); },ms(t))); }
+}
+
+/* 指のお手本 */
+let fingerTarget=null;
+function fingerOn(el,say){ if(!el)return; fingerTarget=el; placeFinger(say); }
+function placeFinger(say){ const f=$("#finger"),s=$("#fingerSay"); if(!fingerTarget){f.classList.remove("on");s.style.display="none";return;}
+  const r=fingerTarget.getBoundingClientRect(); f.style.left=(r.left+r.width/2-8)+"px"; f.style.top=(r.top+r.height/2-6)+"px"; f.classList.add("on");
+  if(say!==undefined){s.textContent=say;s.dataset.say=say;}
+  if(!s.dataset.say){s.style.display="none";return;}
+  if(fingerTarget.closest&&fingerTarget.closest("#pads")){ s.style.display="none"; const a=$("#ask"); if(a.dataset.say!==s.dataset.say){ if(!a.dataset.say)a.dataset.base=a.innerHTML; a.dataset.say=s.dataset.say;
+      a.innerHTML=(a.dataset.base?a.dataset.base+'<br>':'')+'<span style="display:inline-block;margin-top:4px;background:var(--sumi);color:var(--ryoushi);padding:4px 10px">'+esc(s.dataset.say)+'</span>';} return; }
+  s.style.display="block";const w=s.offsetWidth;let x=r.left-w-18,y=r.top+r.height/2-18; if(x<6){x=Math.max(6,Math.min(innerWidth-w-6,r.left+r.width/2-w/2));y=r.top-44;if(y<60)y=r.bottom+70;}
+  s.style.left=x+"px";s.style.top=y+"px"; }
+function fingerOff(){fingerTarget=null;fingerStep=null;const s=$("#fingerSay");s.dataset.say="";const a=$("#ask");if(a.dataset.say&&a.dataset.base!==undefined)a.innerHTML=a.dataset.base;a.dataset.say="";delete a.dataset.base;placeFinger();}
+addEventListener("resize",()=>{placeFinger();fitTate();});
+
+/* ============================================================
+   画面
+   ============================================================ */
+let cur="title";
+function show(id){fxStop();if(typeof TEN!=="undefined"&&TEN)tenStop();document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));cur=id;fingerOff();waitNext=null;$("#bar").classList.toggle("t",id==="title");
+  $("#barTtl").textContent={title:"活用拍子",map:"段の巻",play:"活用拍子",result:"段の終わり",gacha:"古語籤"}[id]||"活用拍子";}
+$("#startBtn").addEventListener("click",()=>{ if(!SV.clear[1])startDan(1); else openMap(); });
+
+function openMap(){ clearTimers(); show("map"); const row=$("#danRow"); row.innerHTML="";
+  let nextNo=1; for(let i=1;i<=5;i++){ if(!SV.clear[i]){nextNo=i;break;} if(i===5)nextNo=0; }
+  DANS.forEach((d,i)=>{const b=document.createElement("button");b.className="dan"+(i+1===nextNo?" next":"");
+    b.innerHTML='<span class="no">'+d.no+'</span><span class="nm">'+d.nm+'</span><span class="what">'+d.what+'</span>'+(SV.clear[i+1]?'<span class="done">済</span>':"");
+    pressable(b,()=>startDan(i+1)); row.appendChild(b);});
+  if(nextNo&&!SV.seen.map){ later(()=>fingerOn(row.children[nextNo-1],"次はここ"),300); }
+}
+$("#toGacha").addEventListener("click",openGacha);
+/* やめる：表紙以外のどこからでも。途中なら確かめの札を1回はさむ（ブラウザの confirm は使わない） */
+function quitAsk(){ const msg=cur==="play"&&P?"この段の途中の点は残りません。<br>集めた文・札・済んだ段は残ります。":"集めた文・札・済んだ段は残ります。";
+  $("#quitMsg").innerHTML=msg; $("#quitV").classList.add("on"); }
+function quitGo(){ clearTimers(); fxStop(); if(typeof TEN!=="undefined"&&TEN)tenStop(); tutRetry=null;
+  document.querySelectorAll(".veil.on").forEach(v=>v.classList.remove("on")); P=null; save(); show("title"); }
+$("#quitBtn").addEventListener("click",e=>{e.stopPropagation();quitAsk();});
+$("#quitNo").addEventListener("click",e=>{e.stopPropagation();$("#quitV").classList.remove("on");});
+$("#quitYes").addEventListener("click",e=>{e.stopPropagation();quitGo();});
+$("#quitV").addEventListener("click",e=>{if(e.target.id==="quitV")$("#quitV").classList.remove("on");});
+/* 表紙の「もどる」：ゲーム集の中なら一覧を閉じる／前のページがあればそこへ／無ければ全体の目次（apps/_site/index.html）へ。
+   古文はまだどのゲーム集にも入っていないので、決まった一覧は無い */
+function goHome(){ fxStop(); try{ if(window.parent&&window.parent!==window){ window.parent.postMessage({type:"rika-close-game"},"*"); return; } }catch(e){}
+  if(history.length>1){ history.back(); return; }
+  try{ const m=decodeURIComponent(location.pathname).match(/^(.*?\/)成果物\//); if(m){ location.href=location.protocol+"//"+(location.host||"")+encodeURI(m[1])+"apps/_site/index.html"; return; } }catch(e){}
+  location.href="../../apps/_site/index.html"; }
+$("#homeBtn").addEventListener("click",e=>{e.stopPropagation();goHome();});
+$("#toCho").addEventListener("click",openCho);
+
+/* ============================================================
+   段をあそぶ
+   ============================================================ */
+let P=null; // {dan, items, idx, miss, retryOK, test, score, streak}
+let shownLes={}; // この回で全部見せた手ほどき
+function startDan(n){ clearTimers(); SV.seen.map=1; save();
+  let items;
+  if(n===1) items=CHANTS.map(c=>({t:"c",...c}));
+  else if(n===2){ const first=S2[0]; const rest=shuffle(S2.slice(1)); const pick=[first]; const need=["未然","終止","連体","已然","命令"];
+    need.forEach(f=>{let i=f==="命令"?rest.findIndex(q=>q.v==="見よ"):rest.findIndex(q=>q.a===f&&!pick.includes(q));pick.push(rest.splice(i,1)[0]);});
+    const ba=rest.filter(q=>q.ba); pick.push(ba[0]||rest[0]); rest.splice(rest.indexOf(pick[pick.length-1]),1); pick.push(rest[0]);
+    items=[first].concat(shuffle(pick.slice(1))).map(q=>({t:"f",...q}));
+    items[0].demo=true; }
+  else if(n===3){ items=shuffle(S3).slice(0,8).map(q=>({t:"f",...q})); }
+  else if(n===4){ const sp=shuffle(S4.filter(q=>q.sp)).slice(0,4), nz=shuffle(S4.filter(q=>!q.sp)).slice(0,4);
+    items=[S4[0]].concat(shuffle(sp.concat(nz).filter(q=>q!==S4[0])).slice(0,7)).map(q=>({t:"k",...q})); items[0].demo=true; }
+  else items=shuffle(TEST).map(q=>({...q}));
+  P={dan:n,items,idx:0,miss:0,score:0,streak:0,test:n===5,got:0};
+  show("play"); $("#pDan").textContent=DANS[n-1].no+"の段　"+DANS[n-1].nm;
+  nextItem(); }
+function dots(){ const d=$("#dots"); d.innerHTML=P.items.map((q,i)=>'<i class="'+(i<P.idx?"ok":i===P.idx?"cur":"")+'"></i>').join(""); }
+function nextItem(){ clearTimers(); fxStop(); fingerOff(); $("#ask").innerHTML=""; $("#pads").innerHTML=""; $("#stageIn").innerHTML="";
+  if(P.idx>=P.items.length) return finishDan();
+  dots(); const q=P.items[P.idx]; q.tries=0; q.retried=false;
+  if(q.t==="c") runChant(q); else if(q.t==="f") runForm(q); else runKind(q); }
+function itemDone(firstTry){ if(firstTry)P.score++; P.idx++; armNext(nextItem); }
+
+/* ---------- ひと口手ほどき ---------- */
+let tutRetry=null;
+function stumble(id,retry){ // 1回目＝手ほどき、2回目以降＝小さなヒント（答えるまで消さない）
+  const l=L[id];
+  if(shownLes[id]){ retry&&retry(); const old=$("#ask .hint"); if(old)old.remove();
+    $("#ask").insertAdjacentHTML("beforeend",'<div class="hint">ヒント：'+esc(l.t)+'<button>例題を見る</button></div>');
+    $("#ask .hint button").addEventListener("click",()=>openLesson(id,null)); return; }
+  shownLes[id]=1; openLesson(id,retry); }
+/* 手ほどきの行は時間では出さない。札のどこかを押すたびに1行ずつ → 最後に答え → もう一度押すと閉じる */
+function openLesson(id,retry){ const l=L[id]; tutRetry=retry||null;
+  $("#tutT").textContent=l.t; $("#tutEx").innerHTML=ruby(l.ex); $("#tutSteps").innerHTML=l.st.map(s=>"<li>"+rb(s)+"</li>").join("");
+  $("#tutA").textContent="答え　"+l.a; $("#tutA").classList.remove("on");
+  $("#tutGo").textContent=retry?"では、もう一度やってみよう！":"わかった";
+  $("#tut").classList.add("on"); fingerOff();
+  document.querySelector("#tutSteps li").classList.add("on"); if(!document.querySelector("#tutSteps li:not(.on)"))$("#tutA").classList.add("on"); tutCue(); }
+function tutCue(){ const rest=[...document.querySelectorAll("#tutSteps li:not(.on)")].length; $("#tutCue").textContent=rest?"▼ 押すと次の行（あと"+rest+"行）":"押すと とじる"; }
+function tutStep(){ const nx=document.querySelector("#tutSteps li:not(.on)");
+  if(nx){ nx.classList.add("on"); if(!document.querySelector("#tutSteps li:not(.on)"))$("#tutA").classList.add("on"); } // 最後の行と答えは一緒に出す
+  else return closeTut();
+  tutCue(); }
+function closeTut(){ $("#tut").classList.remove("on"); const r=tutRetry; tutRetry=null; if(r) r(); }
+$("#tut .card").addEventListener("click",e=>{ if(e.target.closest("button"))return; tutStep(); });
+$("#tutGo").addEventListener("click",closeTut);
+$("#tutSkip").addEventListener("click",closeTut);
+$("#tut").addEventListener("click",e=>{ if(e.target.id==="tut") closeTut(); });
+
+/* ---------- 一の段：唱える（鼓の手本 → あなたの番） ---------- */
+let CH=null;
+function runChant(q){ $("#drum").style.display=""; P.thinking=false;
+  const st=$("#stageIn"); st.innerHTML='<div id="chant">'+FORMS.map((f,i)=>'<div class="col" data-i="'+i+'"><div class="fm">'+f+'</div><div class="sl">'+q.stem+'<span class="e empty">'+q.ends[i]+'</span></div><div class="nx"><b>'+CHANT_NEXT[i]+'</b></div></div>').join("")+'</div>';
+  CH={q,slot:0,phase:"demo"};
+  $("#ask").innerHTML=(q.demo||q.note)?'手本：「'+q.verb+'」が、下の語に合わせて形を変える'+(q.note?'<br><span style="font-weight:600">'+q.note+'</span>':""):'鼓の手本を聞いて…';
+  $("#pads").innerHTML="";
+  const cols=[...document.querySelectorAll("#chant .col")];
+  if(q.demo||q.note){ // 鼓の手本：BGMと同じ時計の拍に乗せて6つ打つ（音は時刻指定で正確に、光は合わせて）
+    const tS=nextBeatAt(.35), ms=t=>Math.max(0,(t-clk())*1000);
+    cols.forEach((c,i)=>{ const tb=tS+i*BEAT; pon(i,tb);
+      later(()=>{cols.forEach(x=>x.classList.remove("lit"));c.classList.add("lit");c.querySelector(".e").classList.remove("empty");drumBeat();},ms(tb)); });
+    later(()=>{cols.forEach(c=>{c.classList.remove("lit");c.querySelector(".e").classList.add("empty");});youTurn();},ms(tS+6*BEAT)+250);
+  } else { later(youTurn,300); }
+}
+function drumBeat(){const d=$("#drum");if(!d)return;d.classList.remove("beat");void d.getBoundingClientRect();d.classList.add("beat");}
+function youTurn(){ const q=CH.q; CH.phase="you";
+  $("#ask").innerHTML="あなたの番。光る所の終わりの音を打つ";
+  const pads=$("#pads"); pads.innerHTML=""; pads.style.flexDirection="row";
+  q.ch.forEach(k=>{const b=document.createElement("button");b.className="pad kana";b.innerHTML='<span class="vt">'+k+'</span>';b.dataset.k=k;pressable(b,()=>chantTap(b));pads.appendChild(b);});
+  litSlot();   // 拍（カチ・鼓の絵）は BGM の時計が step() で打つ
+  if(q.demo){ const right=[...pads.children].find(b=>b.dataset.k===q.ends[0]); later(()=>fingerOn(right,"「ず」の上は「か」。ここを打つ"),200); }
+}
+function litSlot(){ document.querySelectorAll("#chant .col").forEach((c,i)=>c.classList.toggle("lit",i===CH.slot)); }
+function chantTap(b){ if(CH.phase!=="you")return; fingerOff(); const q=CH.q,i=CH.slot;
+  [...$("#pads").children].forEach(x=>x.classList.remove("wrong","right"));
+  if(b.dataset.k===q.ends[i]){
+    const c=document.querySelectorAll("#chant .col")[i]; c.querySelector(".e").classList.remove("empty");
+    P.streak++; pon(Math.min(P.streak,7)); b.classList.add("right");
+    if(!SV.calm){ const r=b.getBoundingClientRect(); inkBurst(r.left+r.width/2,r.top+r.height/2,7,300); goldBurst(r.left+r.width/2,r.top+r.height/2,4,260); fxRun(); }
+    $("#ask").innerHTML="あなたの番。光る所の終わりの音を打つ";
+    if(beatDist()<.13){ earn(1,"ぴたり"); const p=$("#pita"),r=b.getBoundingClientRect();p.style.left=(r.left)+"px";p.style.top=(r.top-28)+"px";p.animate([{opacity:1},{opacity:1,offset:.6},{opacity:0}],{duration:700}); }
+    else earn(CH.retry?2:1, CH.retry?"もう一度で正解":"");
+    CH.retry=false;
+    CH.slot++; if(CH.slot<6){ litSlot(); later(()=>b.classList.remove("right"),200); }
+    else { CH.phase="done"; document.querySelectorAll("#chant .col").forEach(c=>c.classList.add("lit"));
+      celebrate(q.ends.map(e=>q.stem+e).join("・"),P.streak,true); $("#ask").innerHTML='六つそろった：<b>'+esc(q.ends.map(e=>q.stem+e).join("・"))+'</b>'; const first=!CH.missed; itemDone(first); }
+  } else {
+    b.classList.add("wrong"); low(); P.streak=0; P.miss++; CH.missed=true; CH.retry=true;
+    stumble(q.les,()=>{ [...$("#pads").children].forEach(x=>x.classList.remove("wrong")); });
+  }
+}
+
+/* ---------- 二・三・五の段：見分け ---------- */
+function tateHTML(q){ return '<div class="tate" id="tate">'+(q.pre?'<span class="dim">'+rb(q.pre)+'</span>':"")+'<span class="v">'+rb(q.v)+'</span><span class="n">'+rb(q.n)+'</span>'+(q.post?'<span class="dim">'+rb(q.post)+'</span>':"")+'</div>'+(q.src?'<div class="src">'+esc(q.src)+'</div>':""); }
+function fitTate(){ const t=$("#tate"),s=$("#stage"); if(!t||!s)return; const len=(t.textContent||"").length-[...t.querySelectorAll("rt")].reduce((a,r)=>a+r.textContent.length,0)+1; const h=s.clientHeight-28;
+  t.style.whiteSpace="";t.style.height="";
+  let fs=Math.min(46,Math.floor(h/(len*1.1))); if(fs<28){fs=28;t.style.whiteSpace="normal";t.style.height=h+"px";} t.style.fontSize=fs+"px"; }
+function fitLater(){ fitTate(); requestAnimationFrame(fitTate); }
+function lessonForForm(q,chosen){ if(q.ba&&(chosen==="未然"||chosen==="已然"))return"ba";
+  if((q.a==="終止"&&chosen==="連体")||(q.a==="連体"&&chosen==="終止"))return"shuren";
+  if(q.ba)return"ba";
+  return {未然:"mizen",連用:"renyo",終止:"shushi",連体:"rentai",已然:"izen",命令:"meirei"}[q.a]; }
+function whyForm(q){ if(q.a==="終止")return"「。」で ふつうに言い切る → 終止形"; if(q.a==="命令")return"「〜しろ！」と命じて終わる → 命令形";
+  if(q.ba)return q.a==="未然"?"未然形＋ば ＝ もし〜なら":"已然形＋ば ＝ 〜ので・〜と"; if(q.a==="連体")return"「"+plain(q.n)+"」はものの名前（名詞）→ 連体形"; return"「"+plain(q.n)+"」の上 → "+q.a+"形"; }
+function runForm(q){ $("#drum").style.display="none"; P.thinking=true; $("#stageIn").innerHTML=tateHTML(q);
+  $("#ask").innerHTML=(q.demo?'緑の語は 何形？ 赤い線の語（下の語）を見て打つ':'緑の語は 何形？')+(q.note?'<br><span style="font-weight:600">（'+esc(q.note)+'）</span>':"");
+  const pads=$("#pads"); pads.innerHTML=""; pads.style.flexDirection="row-reverse";
+  FORMS.forEach(f=>{const b=document.createElement("button");b.className="pad";b.innerHTML='<span class="vt">'+f+'<small>形</small></span>';b.dataset.f=f;pressable(b,()=>formTap(q,b));pads.appendChild(b);});
+  fitLater();
+  if(q.demo){ const n=document.querySelector("#tate .n"); // 指は時間で動かさない：見る所 →（どこか押す）→ 打つ札
+    later(()=>{ fingerOn(n,"下の語「"+plain(q.n)+"」を見る　▶押すと次"); fingerStep=()=>{ if(q.tries)return; const right=[...pads.children].find(b=>b.dataset.f===q.a); fingerOn(right,"「"+plain(q.n)+"」の上は "+q.a+"形"); }; },250); }
+}
+function formTap(q,b){ if(q.done)return; fingerOff(); const f=b.dataset.f; q.tries++;
+  if(f===q.a){ q.done=true; b.classList.add("right"); P.streak++; pon(Math.min(P.streak,7)); celebrate(q.a+"形",P.streak);
+    $("#ask").innerHTML='<span>'+rb(whyForm(q))+'</span>';
+    if(P.test){ if(q.tries===1){P.score++;earn(1);} P.idx++; armNext(nextItem); return; }
+    earn(q.retried?2:1, q.retried?"もう一度で正解":""); P.idx++; if(q.tries===1)P.score++; armNext(nextItem); return; }
+  b.classList.add("wrong"); low(); P.streak=0; P.miss++;
+  if(P.test){ q.done=true; const right=[...$("#pads").children].find(x=>x.dataset.f===q.a); right.classList.add("show");
+    $("#ask").innerHTML='答えは <b>'+q.a+'形</b>　'+rb(whyForm(q))+'<br><button class="go main" id="tNext" style="height:52px;margin-top:6px">次へ（どこを押しても）</button>';
+    P.idx++; armNext(nextItem,false); return; }
+  q.retried=true; stumble(lessonForForm(q,f),()=>{ [...$("#pads").children].forEach(x=>x.classList.remove("wrong")); });
+}
+
+/* ---------- 四・五の段：動詞の仲間 ---------- */
+function runKind(q){ $("#drum").style.display="none"; P.thinking=true; q.step=1; q.missed=false;
+  $("#stageIn").innerHTML='<div class="tate" id="tate"><span class="v">'+rb(q.verb)+'</span></div>'; kindStep1(q); fitLater(); }
+function kindStep1(q){ q.step=1; $("#ask").innerHTML=(q.demo?'動詞は、形の変わり方で9つの仲間に分かれる。<br>':'')+'「'+rb(q.verb)+'」は 覚える組 にいる？';
+  const pads=$("#pads"); pads.innerHTML=""; pads.style.flexDirection="row";
+  GROUPS.forEach(g=>{const b=document.createElement("button");b.className="pad grp";b.innerHTML='<b>'+g.id+'</b><span>'+g.w.split(/([ ・])/).map(w=>/^[ ・]$/.test(w)?w:'<span style="display:inline-block">'+ruby(w)+'</span>').join('')+'</span>';b.dataset.g=g.id;pressable(b,()=>kindTap1(q,b));pads.appendChild(b);});
+  const no=document.createElement("button");no.className="pad wide";no.innerHTML='<span style="font:900 19px var(--gothic)">どこにもいない →「ず」をつけてみる</span>';no.dataset.g="none";pressable(no,()=>kindTap1(q,no));pads.appendChild(no);
+  if(q.demo&&!q.tries){ later(()=>fingerOn(no,"「"+plain(q.verb)+"」は組にいない。ここ"),400); }
+}
+function kindWrong(q,b,les,again){ b.classList.add("wrong"); low(); P.streak=0; P.miss++; q.missed=true;
+  if(P.test){ q.done=true; $("#ask").innerHTML='答えは <b>'+q.k+'</b>'+(q.sp?'（覚える組）':'（'+q.zu[q.z]+' → '+["ア","イ","エ"][q.z]+'段）')+'<br><button class="go main" id="tNext" style="height:52px;margin-top:6px">次へ（どこを押しても）</button>';
+    P.idx++; armNext(nextItem,false); return; }
+  q.retried=true; stumble(les,again); }
+function kindTap1(q,b){ if(q.done)return; fingerOff(); q.tries=(q.tries||0)+1; const g=b.dataset.g;
+  if(q.sp){ if(g===q.k){ b.classList.add("right"); return kindRight(q); } return kindWrong(q,b,"oboe",()=>kindStep1(q)); }
+  if(g!=="none") return kindWrong(q,b,"oboe",()=>kindStep1(q));
+  pon(2); kindStep2(q); }
+function kindStep2(q){ q.step=2; $("#ask").innerHTML='「ず」をつけると、どれが自然？';
+  const pads=$("#pads"); pads.innerHTML=""; pads.style.flexDirection="row";
+  q.zu.forEach((z,i)=>{const b=document.createElement("button");b.className="pad";b.style.maxWidth="160px";b.innerHTML='<span class="vt">'+z+'</span>';b.dataset.i=i;pressable(b,()=>kindTap2(q,b));pads.appendChild(b);});
+  if(q.demo&&!q.missed){ const r=pads.children[q.z]; later(()=>fingerOn(r,"今の言葉の「起きない」と同じ音"),300); } }
+function kindTap2(q,b){ if(q.done)return; fingerOff();
+  if(+b.dataset.i===q.z){ pon(3); return kindStep3(q); }
+  kindWrong(q,b,"shurui",()=>kindStep2(q)); }
+function kindStep3(q){ q.step=3; const z=q.zu[q.z]; const ch=z.charAt(z.length-2);
+  $("#stageIn").innerHTML='<div class="tate" id="tate"><span class="dim">'+esc(z.slice(0,-2))+'</span><span class="v">'+ch+'</span><span class="n">ず</span></div>';
+  $("#ask").innerHTML='「'+ch+'」は 何段の音？ → 仲間を打つ';
+  const pads=$("#pads"); pads.innerHTML=""; pads.style.flexDirection="row";
+  setTimeout(fitLater,0);
+  [["四段","ア段（か・は・ま…）"],["上二段","イ段（き・ひ・み…）"],["下二段","エ段（け・へ・め…）"]].forEach(([k,s])=>{const b=document.createElement("button");b.className="pad grp";b.innerHTML='<b>'+k+'</b><span>'+s+'</span>';b.dataset.k=k;pressable(b,()=>kindTap3(q,b));pads.appendChild(b);});
+  if(q.demo&&!q.missed){ const r=[...pads.children].find(x=>x.dataset.k===q.k); later(()=>fingerOn(r,"「き」はイ段 → 上二段"),300); } }
+function kindTap3(q,b){ if(q.done)return; fingerOff(); if(b.dataset.k===q.k){ b.classList.add("right"); return kindRight(q); } kindWrong(q,b,"shurui",()=>kindStep3(q)); }
+function kindRight(q){ q.done=true; P.streak++; pon(Math.min(P.streak,7)); celebrate(q.k,P.streak);
+  $("#ask").innerHTML=rb(q.verb)+' は <b>'+q.k+'</b>'+(q.sp?'（覚える組）':'（'+q.zu[q.z]+'）');
+  if(P.test){ if(!q.missed){P.score++;earn(1);} P.idx++; armNext(nextItem); return; }
+  earn(q.retried?2:1,q.retried?"もう一度で正解":""); if(!q.missed)P.score++; P.idx++; armNext(nextItem); }
+
+/* ---------- 段の終わり ---------- */
+function resultFx(w){ if(cur!=="result")return; fxLayer(false); const bus=fxBus(), t=nextBeatAt(.1);
+  if(bus){ kotsuzumi(t,.8,bus); ookawa(t+BEAT,.6,bus); kotsuzumi(t+BEAT*2,.85,bus); if(w==="すごい"){ const KN=kotoNotes("ritsu"); for(let i=0;i<8;i++)koto(KN[Math.min(KN.length-1,6+i)],t+BEAT*2+i*BEAT/8,.28,0,0,bus); shoko(t+BEAT*2,.06,bus);} }
+  if(SV.calm)return; const r=$("#rWord").getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height/2;
+  $("#rWord").animate([{transform:"scale(1.3) rotate(-4deg)"},{transform:"none"}],{duration:220,easing:"ease-out"});
+  inkBurst(x,y,24,560); goldBurst(x,y,20,420); fxAdd({k:"ring",x,y,life:0,max:.5,R:Math.max(r.width,r.height)});
+  if(w==="すごい"){ FX.timers.push(setTimeout(()=>{goldRain(90);tanzaku(14);fxRun();},Math.max(0,(t+BEAT*2-clk())*1000))); }
+  fxRun(); }
+function finishDan(){ clearTimers(); const n=P.dan, tot=P.items.length; SV.clear[n]=1; earn(5,"段クリア"); save();
+  show("result"); let w;
+  if(P.test) w=P.score>=11?"すごい":P.score>=8?"ふつう":"もういっぺん";
+  else w=P.miss===0?"すごい":P.miss<=3?"ふつう":"もういっぺん";
+  $("#rWord").textContent=w;
+  later(()=>resultFx(w),60);
+  $("#rInfo").innerHTML='<div>'+DANS[n-1].no+'の段　'+DANS[n-1].nm+'</div>'+(P.test?'<div class="big">'+P.score+' / '+tot+'</div><div>一回目で正解した数</div>':'<div class="big">'+P.score+' / '+tot+'</div><div>一回目で打てた数</div>')+'<div style="margin-top:10px">いまの文：<b>'+SV.zeni+'</b>（5文で籤1回）</div>';
+  const f=$("#rFoot"); f.innerHTML="";
+  const mk=(t,cls,fn)=>{const b=document.createElement("button");b.className="go "+(cls||"");b.textContent=t;b.addEventListener("click",fn);f.appendChild(b);return b;};
+  const g=mk("籤を引く","main",openGacha);
+  if(n<5) mk("次の段へ","",()=>startDan(n+1));
+  mk("もう一回","",()=>startDan(n)); mk("段の巻へ","",openMap);
+  if(SV.zeni>=5&&!SV.seen.gacha) later(()=>fingerOn(g,"文がたまった！"),500);
+}
+
+/* ---------- 籤（ガチャ）：1回ずつ／まとめて（最大10回） ---------- */
+function openGacha(){ clearTimers(); show("gacha"); SV.seen.gacha=1; save(); gSay(); }
+function canMany(){ return Math.min(10,Math.floor(SV.zeni/5)); }
+function gSay(){ const have=Object.keys(SV.fuda).length; $("#gSay").innerHTML=SV.zeni>=5?'筒を振って、古語の札を引く。<br>いま <b>'+SV.zeni+'文</b>／集めた札 '+have+' / '+KOGO.length:'あと <b>'+(5-SV.zeni)+'文</b>で引ける。段を遊ぶと文がたまる。<br>集めた札 '+have+' / '+KOGO.length;
+  $("#pullBtn").style.opacity=SV.zeni>=5?1:.45;
+  const n=canMany(),b=$("#pull10"); b.textContent=n>=10?"十連（50文）":n>=2?"まとめて"+kan(n)+"回（"+n*5+"文）":"まとめて引く（10文から）"; b.style.opacity=n>=2?1:.45; }
+function drawOne(){ const r=Math.random(); const rank=r<.1?2:r<.32?1:0; const pool=KOGO.map((k,i)=>i).filter(i=>KOGO[i][2]===rank); const id=pool[Math.random()*pool.length|0];
+  const isNew=!SV.fuda[id]; SV.fuda[id]=(SV.fuda[id]||0)+1; return {id,rank,isNew}; }
+function shakeTube(times){ const t=$("#tsutsu"); t.style.animationIterationCount=times; t.classList.remove("shake"); void t.getBoundingClientRect(); t.classList.add("shake"); rattle(); if(times>2)setTimeout(rattle,520); }
+$("#pullBtn").addEventListener("click",()=>{ if(SV.zeni<5){gSay();return;} SV.zeni-=5; const d=drawOne(); save(); updZeni();
+  shakeTube(2); $("#pullBtn").disabled=$("#pull10").disabled=true;
+  setTimeout(()=>{ $("#pullBtn").disabled=$("#pull10").disabled=false; chime(d.rank); showFuda(d.id); gSay();
+    if(!SV.calm&&(d.isNew||d.rank)){ fxLayer(true); const w=document.querySelector("#fudaBody .fuda .w"); if(w){const r=w.getBoundingClientRect(); goldBurst(r.left+r.width/2,r.top+r.height/2,14+d.rank*14,520); fxRun();} } }, SV.calm?200:1050); });
+$("#pull10").addEventListener("click",()=>{ const n=canMany(); if(n<2){gSay();return;} SV.zeni-=n*5; const res=[]; for(let i=0;i<n;i++)res.push(drawOne()); save(); updZeni();
+  shakeTube(4); $("#pullBtn").disabled=$("#pull10").disabled=true;
+  setTimeout(()=>{ $("#pullBtn").disabled=$("#pull10").disabled=false; gSay(); openTen(res); }, SV.calm?200:2050); });
+
+/* まとめて引いた結果：裏向きに配る → 拍に合わせて1枚ずつめくる → 一番珍しい札は最後に1拍ためてめくる。押すと全部めくる */
+let TEN=null;
+const kw=k=>k[3]?'<ruby>'+k[0]+'<rt>'+k[3]+'</rt></ruby>':k[0];
+function tenStop(){ if(TEN){TEN.timers.forEach(clearTimeout);TEN.timers=[];} fxStop(); }
+function openTen(res){ tenStop(); fxLayer(true);
+  const sc=r=>r.rank*2+(r.isNew?1:0); let best=0; res.forEach((r,i)=>{ if(sc(r)>sc(res[best]))best=i; });
+  const order=res.map((r,i)=>i).filter(i=>i!==best); order.push(best);
+  TEN={res,order,timers:[],done:false,best}; fudaMode="tenFlip"; renderTen(); $("#fudaV").classList.add("on");
+  if(SV.calm) return tenRevealAll();
+  const cards=[...document.querySelectorAll("#ten .tc")];
+  cards.forEach((c,i)=>c.animate([{opacity:0,transform:"translateY(-40px) rotate(-10deg)"},{opacity:1,transform:"none"}],{duration:200,delay:i*55,fill:"backwards",easing:"ease-out"}));
+  const bus=fxBus(), KN=kotoNotes("ritsu"), ms=x=>Math.max(0,(x-clk())*1000);
+  let t=nextBeatAt(.3+cards.length*.055);
+  order.forEach((idx,j)=>{ const last=j===order.length-1, r=res[idx];
+    if(last&&r.rank>=1){ const tt=t; TEN.timers.push(setTimeout(()=>tenTease(idx),ms(tt))); if(bus){ookawa(tt,.5,bus);} t+=BEAT; }   // 溜め：1拍ふるえる
+    const tf=t;
+    if(bus){ koto(KN[Math.min(KN.length-1,7+j)],tf,.34,0,(j%2?.3:-.3),bus); if(r.isNew)shoko(tf+.03,.05,bus);
+      if(last){ kotsuzumi(tf,.8,bus); if(r.rank>=1){ for(let i=0;i<6;i++)koto(KN[Math.min(KN.length-1,12+i)],tf+.08+i*BEAT/8,.26,0,0,bus); } if(r.rank>=2){ookawa(tf+BEAT/2,.7,bus);kotsuzumi(tf+BEAT,.8,bus);} } }
+    TEN.timers.push(setTimeout(()=>tenFlip(idx,last),ms(tf)));
+    t+=EIGHTH; });
+  TEN.timers.push(setTimeout(tenFinish,ms(t)+(res[best].rank>=1?700:300)));
+}
+function renderTen(){ const T=TEN, nNew=T.res.filter(r=>r.isNew).length;
+  $("#fudaBody").innerHTML='<div class="tag">古語籤　'+kan(T.res.length)+'回まとめて</div><div class="ten" id="ten">'+T.res.map((r,i)=>{const k=KOGO[r.id];
+    return '<div class="tc r'+r.rank+(T.done?' open'+(r.isNew?' new':''):'')+'" data-i="'+i+'"><div class="bk"><span>籤</span></div><div class="fc"><span class="wd">'+kw(k)+'</span><span class="rk">'+RANKN[r.rank]+'</span><span class="nw">新</span><i class="hl"></i></div></div>';}).join("")+
+    '</div><div class="tutcue" id="tenCue">'+(T.done?'新しい札 <b>'+nNew+'</b>枚・かさね '+(T.res.length-nNew)+'枚<br>札を押すと意味、ほかを押すと とじる':'押すと 全部めくる')+'</div>';
+  document.querySelectorAll("#ten .tc").forEach(c=>c.addEventListener("click",e=>{ if(fudaMode!=="ten")return; e.stopPropagation(); showFuda(T.res[+c.dataset.i].id,"ten"); })); }
+function tenEl(i){ return document.querySelector('#ten .tc[data-i="'+i+'"]'); }
+function tenTease(i){ const c=tenEl(i); if(!c)return; c.classList.add("tease"); c.animate([{transform:"rotate(0)"},{transform:"rotate(-4deg)"},{transform:"rotate(4deg)"},{transform:"rotate(-3deg)"},{transform:"rotate(3deg)"},{transform:"rotate(0)"}],{duration:BEAT*1000*.9}); }
+function tenFlip(i,last){ const c=tenEl(i); if(!c)return; const r=TEN.res[i]; c.classList.remove("tease"); c.classList.add("open"); if(r.isNew)c.classList.add("new");
+  const b=c.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2;
+  if(r.isNew||r.rank){ goldBurst(x,y,6+r.rank*8,300); }
+  if(last){ fxAdd({k:"ring",x,y,life:0,max:.5,R:Math.max(b.width,b.height)*1.6}); inkBurst(x,y,12,380); goldBurst(x,y,20+r.rank*24,560);
+    if(r.rank>=2){ goldRain(70); } c.animate([{transform:"scale(1.25)"},{transform:"scale(1)"}],{duration:260,easing:"ease-out"}); chime(r.rank); }
+  fxRun(); }
+function tenFinish(){ if(!TEN)return; TEN.done=true; fudaMode="ten"; const nNew=TEN.res.filter(r=>r.isNew).length;
+  $("#tenCue").innerHTML='新しい札 <b>'+nNew+'</b>枚・かさね '+(TEN.res.length-nNew)+'枚<br>札を押すと意味、ほかを押すと とじる'; gSay(); }
+function tenRevealAll(){ tenStop(); TEN.done=true; fudaMode="ten"; renderTen(); }
+
+let fudaMode=null; // "one"＝引いた札／"cho"＝札帳から開いた札（押すと札帳へ）／"ten"＝まとめての結果から開いた札（押すと結果へ）／"list"＝札帳／"tenFlip"＝めくっている途中
+function showFuda(id,from){ fudaMode=from==="ten"?"tenOne":from?"cho":"one"; const k=KOGO[id],n=SV.fuda[id];
+  $("#fudaBody").innerHTML='<div class="tag">古語の札</div><div class="fuda" style="margin-top:12px"><div class="w">'+kw(k)+'</div><div class="m"><span class="rank r'+k[2]+'">'+RANKN[k[2]]+'</span><br>'+rb(k[1])+
+    (k[3]?'<div class="yomi">読み　<b>'+k[3]+'</b><br><small>'+esc(k[4])+'</small></div>':'')+
+    (n>1?'<span style="color:#4a463d;font-size:.85em">かさね ×'+n+'</span>':'<span style="color:#3E6B4C;font-size:.85em">はじめての札</span>')+'</div></div><div class="tutcue">押すと '+(from==="ten"?"結果へもどる":from?"札帳へ":"とじる")+'</div>';
+  $("#fudaV").classList.add("on"); }
+function openCho(){ fudaMode="list"; const have=Object.keys(SV.fuda).length;
+  $("#fudaBody").innerHTML='<div class="tag">札帳</div><h2>集めた札 '+have+' / '+KOGO.length+'</h2><div class="cho">'+KOGO.map((k,i)=>SV.fuda[i]?'<div class="r'+k[2]+'" data-i="'+i+'">'+kw(k)+'<i>'+RANKN[k[2]]+'</i></div>':'<div class="no">？</div>').join("")+'</div><div class="smallnote">札を押すと意味が出る。並・上は古文によく出る言葉、特は枕詞（まくらことば：和歌で決まった言葉の前に置く飾りの言葉）。札の横の小さい字は、いまの読み方。</div>';
+  $("#fudaV").classList.add("on");
+  document.querySelectorAll(".cho div[data-i]").forEach(d=>d.addEventListener("click",e=>{e.stopPropagation();showFuda(+d.dataset.i,true);})); }
+$("#gCho").addEventListener("click",openCho); $("#gBack").addEventListener("click",openMap);
+function closeFuda(){ tenStop(); $("#fudaV").classList.remove("on"); }
+$("#fudaClose").addEventListener("click",closeFuda);
+$("#fudaV").addEventListener("click",e=>{ if(e.target.id==="fudaClose")return;
+  if(fudaMode==="cho") return openCho();
+  if(fudaMode==="tenOne"){ fudaMode="ten"; return renderTen(); }
+  if(fudaMode==="tenFlip") return tenRevealAll();
+  if(fudaMode==="one"||fudaMode==="ten"||e.target.id==="fudaV") closeFuda(); });
+
+/* ============================================================
+   ヘルプ（どの画面でも）
+   ============================================================ */
+let helpTab="how";
+$("#helpBtn").addEventListener("click",()=>{ helpTab=cur==="play"&&P&&P.miss?"book":"how"; renderHelp(); $("#help").classList.add("on"); });
+$("#helpClose").addEventListener("click",()=>$("#help").classList.remove("on"));
+$("#help").addEventListener("click",e=>{if(e.target.id==="help")$("#help").classList.remove("on");});
+$("#helpTabs").addEventListener("click",e=>{const t=e.target.dataset&&e.target.dataset.t;if(t){helpTab=t;renderHelp();}});
+function renderHelp(){ document.querySelectorAll("#helpTabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===helpTab)); const H=$("#helpBody");
+  if(helpTab==="how"){
+    H.innerHTML='<div class="howto"><p>① <span class="s">赤い線</span>の語（下の語）を見る</p><p>② <span class="k">緑</span>の語が何形かを、下の札から打つ</p><p>③ まちがえたら「ひと口手ほどき」→ もう一度</p><p>正解・段クリアで<b>文</b>がたまる。5文で<b>籤</b>を1回。古語の札が集まる。</p></div>'+
+      (cur==="play"?'<button class="again ready" id="hDemo">指のお手本を見る</button>':cur==="title"?'<button class="again ready" id="hStart">打ちはじめる</button>':'');
+    const d=$("#hDemo"); if(d)d.addEventListener("click",()=>{$("#help").classList.remove("on");demoNow();});
+    const s=$("#hStart"); if(s)s.addEventListener("click",()=>{$("#help").classList.remove("on");$("#startBtn").click();});
+  } else if(helpTab==="book"){
+    let rec=null; if(cur==="play"&&P){const q=P.items[P.idx]; if(q){ if(q.t==="c")rec=q.les; else if(q.t==="f")rec=lessonForForm(q,""); else rec=q.sp?"oboe":"shurui"; }}
+    H.innerHTML=(rec?'<p style="font:800 15px var(--gothic);margin:0 0 6px">いまの問題には →</p><div class="lessonlist" style="margin-bottom:10px"><button data-l="'+rec+'" style="background:var(--moegi)">'+esc(L[rec].t)+'</button></div>':"")+
+      '<div class="lessonlist">'+BOOK_ORDER.map(id=>'<button data-l="'+id+'">'+esc(L[id].t)+'</button>').join("")+'</div><div class="smallnote">押すと例題と答えが出る。確認テスト中に見てもよい（テストの答えそのものは出ない）。</div>';
+    H.querySelectorAll("[data-l]").forEach(b=>b.addEventListener("click",()=>{$("#help").classList.remove("on");openLesson(b.dataset.l,null);}));
+  } else if(helpTab==="hyo"){
+    H.innerHTML='<div class="scrollx"><table class="hyo"><tr><th>仲間</th><th>例</th>'+FORMS.map(f=>'<th>'+f+'</th>').join("")+'</tr><tr class="nx"><td class="k">下の語</td><td></td>'+NEXT_LIST.map(s=>'<td style="white-space:normal;font:600 11.5px/1.3 var(--gothic)">'+s+'</td>').join("")+'</tr>'+
+      HYO.map(r=>'<tr><td class="k">'+r[0]+'</td><td>'+ruby(r[1])+'</td>'+r.slice(3).map(e=>'<td>'+(r[2].startsWith("（")?e:r[2]+e)+'</td>').join("")+'</tr>').join("")+'</table></div><div class="smallnote">覚える組：上一段＝着（き）る・似（に）る・煮（に）る・干（ひ）る・見（み）る・射（い）る・鋳（い）る・居（い）る・率（い）る／下一段＝蹴（け）る／カ変＝来（く）／サ変＝す・おはす（おわす）／ナ変＝死ぬ・往（い）ぬ／ラ変＝あり・をり（おり）・はべり・いまそかり。そのほかは「ず」をつけて、ア段→四段・イ段→上二段・エ段→下二段。</div>';
+  } else {
+    H.innerHTML='<div class="set"><button id="sMute" class="'+(SV.mute?"":"on")+'">音 '+(SV.mute?"なし":"あり")+'</button><button id="sBgm" class="'+(SV.bgmOff?"":"on")+'">BGM '+(SV.bgmOff?"なし":"あり")+'</button><button id="sCalm" class="'+(SV.calm?"on":"")+'">動きを減らす '+(SV.calm?"オン":"オフ")+'</button></div><div class="smallnote">音ははじめから小さめ。上の帯の「音」でも消せる。BGMだけ消すこともできる。<br>集めた文と札は、この端末のこのブラウザだけに残る。</div><div class="set" style="margin-top:10px"><button id="sMap">段の巻へ</button></div>';
+    $("#sMute").addEventListener("click",()=>{toggleMute();renderHelp();}); $("#sBgm").addEventListener("click",()=>{SV.bgmOff=!SV.bgmOff;save();renderHelp();}); $("#sCalm").addEventListener("click",()=>{SV.calm=!SV.calm;save();document.documentElement.classList.toggle("calm",SV.calm);renderHelp();});
+    $("#sMap").addEventListener("click",()=>{$("#help").classList.remove("on");openMap();});
+  } }
+function demoNow(){ if(cur!=="play"||!P)return; const q=P.items[P.idx]; if(!q)return;
+  if(q.t==="c"){ if(CH&&CH.phase==="you"){const r=[...$("#pads").children].find(b=>b.dataset.k===q.ends[CH.slot]); fingerOn(r,"光る形の終わりの音を打つ");} }
+  else if(q.t==="f"){ const n=document.querySelector("#tate .n"); fingerOn(n,"まず下の語「"+plain(q.n)+"」を見る　▶押すと次"); fingerStep=()=>{ if(fingerTarget===n){ fingerOn($("#pads"),"「"+plain(q.n)+"」の上に来る形を、この中から打つ"); } }; }
+  else { fingerOn($("#pads"),q.step===1?"覚える組にいるか探す。いなければ一番下":q.step===2?"「ず」をつけた形を選ぶ":"音の段で仲間を選ぶ"); } }
+function toggleMute(){ SV.mute=!SV.mute; save(); if(MG)MG.gain.value=SV.mute?0:0.16; $("#muteBtn").textContent=SV.mute?"消音":"音"; }
+$("#muteBtn").addEventListener("click",toggleMute);
+$("#muteBtn").textContent=SV.mute?"消音":"音";
+/* 最初に触ったら指を消す */
+updZeni();
+</script>
+</body>
+</html>
