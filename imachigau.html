@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="イマチガーウ">
+<meta name="theme-color" content="#111111">
+<meta name="format-detection" content="telephone=no">
+<title>イマチガーウ</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden}
+body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;color:#111;background:#f6f1e4;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-touch-callout:none}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+[hidden]{display:none!important}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom))}
+
+/* はじめ */
+#start{gap:28px;text-align:center}
+#start h1{margin:0;font-size:20px;color:#666;font-weight:700;letter-spacing:.1em}
+#goBtn{width:min(78vw,520px);aspect-ratio:1/1;max-height:60vh;border-radius:50%;border:0;background:#c8553d;color:#fff;
+  font-size:clamp(34px,7vw,64px);font-weight:900;letter-spacing:.04em;box-shadow:0 10px 0 #8d3726;}
+#goBtn:active{transform:translateY(6px);box-shadow:0 4px 0 #8d3726}
+#goBtn small{display:block;font-size:.32em;font-weight:700;margin-top:.6em;opacity:.9}
+#start p{margin:0;font-size:clamp(17px,2.6vw,22px);line-height:1.7}
+#narrowMsg{color:#b00;font-weight:700}
+.link{background:none;border:0;color:#555;text-decoration:underline;font-size:16px;padding:10px}
+
+/* 計測中 */
+#run{background:#111;color:#fff}
+#clock{font-size:clamp(90px,24vw,300px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em;line-height:1}
+#runInfo{margin-top:18px;font-size:clamp(16px,2.4vw,22px);color:#aaa}
+#runInfo b{color:#fff}
+#runBar{position:absolute;left:0;right:0;bottom:max(18px,env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;padding:0 20px}
+#endBtn{position:relative;overflow:hidden;border:2px solid #fff;background:transparent;color:#fff;border-radius:999px;padding:14px 34px;font-size:20px;font-weight:700}
+#endBtn i{position:absolute;left:0;top:0;bottom:0;width:0;background:#c8553d;z-index:-1}
+#endBtn span{position:relative}
+#quitBtn{border:0;background:transparent;color:#777;font-size:16px;padding:12px}
+#wakeNote{position:absolute;top:max(14px,env(safe-area-inset-top));left:0;right:0;text-align:center;color:#555;font-size:13px}
+
+/* 離脱 */
+#away{background:#d10000;color:#fff;z-index:20;text-align:center;gap:14px}
+#away .big{font-size:clamp(48px,10vw,110px);font-weight:900}
+#away .sub{font-size:clamp(18px,3vw,26px)}
+#away .tap{margin-top:24px;font-size:16px;opacity:.85;border:1px solid #fff;border-radius:999px;padding:10px 24px}
+
+/* 確かめ */
+#confirm{background:rgba(0,0,0,.6);z-index:30}
+#confirm .box{background:#fff;color:#111;border-radius:16px;padding:26px;max-width:420px;width:100%;text-align:center}
+#confirm .box p{font-size:18px;line-height:1.6;margin:0 0 20px}
+#confirm .row{display:flex;gap:12px}
+#confirm .row button{flex:1;padding:14px;border-radius:10px;font-size:18px;border:2px solid #111;background:#fff}
+#confirm .row button.yes{background:#111;color:#fff}
+
+/* 結果 */
+#result{background:transparent;justify-content:flex-start;overflow:auto;padding-top:max(24px,env(safe-area-inset-top))}
+#wm{position:fixed;inset:0;z-index:-1;width:100%;height:100%}
+.res{width:min(92vw,640px);text-align:center}
+.res h2{margin:0 0 6px;font-size:18px;color:#666;letter-spacing:.1em}
+.badge{margin:10px auto 14px;font-size:clamp(26px,5vw,40px);font-weight:900}
+.gold{display:inline-block;padding:10px 26px;border-radius:999px;color:#5a3b00;
+  background:linear-gradient(135deg,#fff3b0,#f2c230 45%,#c99400 55%,#ffe27a);box-shadow:0 3px 0 #a17a00}
+.tally{color:#b00}
+.tally .t{font-size:1.1em;letter-spacing:.08em}
+.big3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0 14px}
+.big3>div{border:2px solid #111;border-radius:12px;padding:10px 4px}
+.big3 .k{font-size:13px;color:#555}
+.big3 .v{font-size:clamp(24px,5vw,38px);font-weight:800;font-variant-numeric:tabular-nums}
+table.when{margin:0 auto 12px;border-collapse:collapse;font-size:clamp(16px,2.6vw,20px)}
+table.when th{font-weight:400;color:#555;text-align:right;padding:3px 12px 3px 0}
+table.when td{text-align:left;font-weight:700;font-variant-numeric:tabular-nums}
+.markRow{display:flex;align-items:center;justify-content:center;gap:18px;margin:8px 0}
+.orbit{position:relative;width:110px;height:110px;flex:none}
+.orbit .ring{position:absolute;inset:0;animation:spin 12s linear infinite}
+.orbit .ring span{position:absolute;left:50%;top:50%;font-size:28px;width:40px;height:40px;margin:-20px 0 0 -20px;text-align:center;line-height:40px}
+.orbit .ring span:nth-child(1){transform:rotate(0deg) translateY(-36px) rotate(0deg)}
+.orbit .ring span:nth-child(2){transform:rotate(120deg) translateY(-36px) rotate(-120deg)}
+.orbit .ring span:nth-child(3){transform:rotate(240deg) translateY(-36px) rotate(-240deg)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.code{font-size:clamp(22px,4vw,30px);font-weight:800;letter-spacing:.12em;font-family:Menlo,monospace}
+.now{color:#555;font-size:15px;margin-top:4px}
+.sweep{height:6px;margin:12px auto;width:100%;border-radius:3px;background:linear-gradient(90deg,#ddd 0%,#ddd 40%,#c8553d 50%,#ddd 60%,#ddd 100%);background-size:300% 100%;animation:sw 4s linear infinite}
+@keyframes sw{from{background-position:100% 0}to{background-position:0 0}}
+.note{font-size:14px;color:#555;line-height:1.6;margin:8px 0 14px}
+.back{border:2px solid #111;background:#fff;border-radius:999px;padding:12px 28px;font-size:17px;margin-bottom:30px}
+
+/* 先生 */
+#sensei{background:#eef1f4;justify-content:flex-start;overflow:auto;-webkit-user-select:text;user-select:text}
+.sen{width:min(94vw,640px);padding-bottom:60px}
+.sen h2{font-size:22px;margin:6px 0}
+.sen p{line-height:1.6}
+.sen label{display:block;margin:12px 0 4px;font-weight:700}
+.sen input{font-size:20px;padding:8px 10px;width:100%;border:1.5px solid #888;border-radius:8px;background:#fff}
+.sen .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pal{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.pal button{font-size:26px;padding:4px 0;border:1.5px solid #ccc;border-radius:8px;background:#fff}
+.picked{font-size:34px;min-height:44px;margin:6px 0}
+.sbtn{border:0;background:#111;color:#fff;border-radius:10px;padding:14px 22px;font-size:18px;margin-top:16px}
+.sbtn.sub{background:#fff;color:#111;border:1.5px solid #111;padding:8px 14px;font-size:15px;margin-top:6px}
+#verdict{margin-top:18px;padding:16px;border-radius:12px;font-size:18px;line-height:1.7;display:none}
+#verdict.ok{display:block;background:#e3f4e5;border:2px solid #3a7d44}
+#verdict.ng{display:block;background:#fde6e3;border:2px solid #c0392b}
+#wmCanvas{width:100%;margin-top:10px;border:1px solid #aaa;display:none}
+hr{border:0;border-top:1px solid #ccc;margin:26px 0}
+</style>
+</head>
+<body>
+
+<!-- はじめ -->
+<section id="start" class="screen">
+  <h1>授業中の見張りタイマー</h1>
+  <button id="goBtn">イマチガーウ<small>今はiPadを使う時間じゃない</small></button>
+  <p>押したら、画面を出したまま待とう。<br>ほかのアプリを開くと止まるよ。</p>
+  <p id="narrowMsg" hidden>画面を横に並べています。iPadの画面いっぱいにしてから押してね。</p>
+  <button id="lastBtn" class="link" hidden>前回の結果を見る</button>
+</section>
+
+<!-- 計測中 -->
+<section id="run" class="screen" hidden>
+  <div id="wakeNote"></div>
+  <div id="clock">0:00</div>
+  <div id="runInfo">離脱 <b id="runLeaves">0</b> 回</div>
+  <div id="runBar">
+    <button id="quitBtn">やめる</button>
+    <button id="endBtn"><i></i><span>おわり（長押し）</span></button>
+  </div>
+</section>
+
+<!-- 離脱して戻ってきたとき -->
+<section id="away" class="screen" hidden>
+  <div class="big">離脱 <span id="awayN">1</span>回目</div>
+  <div class="sub">離れていた時間 <b id="awayT">0:00</b></div>
+  <div class="sub">記録に残りました</div>
+  <div class="tap">タップして閉じる</div>
+</section>
+
+<!-- 確かめ（画面の中で聞く。ブラウザの確認窓は使わない） -->
+<section id="confirm" class="screen" hidden>
+  <div class="box"><p id="cfMsg"></p>
+    <div class="row"><button id="cfNo">もどる</button><button id="cfYes" class="yes">はい</button></div></div>
+</section>
+
+<!-- 結果 -->
+<section id="result" class="screen" hidden>
+  <canvas id="wm"></canvas>
+  <div class="res">
+    <h2>イマチガーウ 結果</h2>
+    <div id="badge" class="badge"></div>
+    <div class="big3">
+      <div><div class="k">集中していた時間</div><div class="v" id="rFocus"></div></div>
+      <div><div class="k">離脱</div><div class="v" id="rLeaves"></div></div>
+      <div><div class="k">離れていた合計</div><div class="v" id="rAway"></div></div>
+    </div>
+    <table class="when">
+      <tr><th>日付</th><td id="rDate"></td></tr>
+      <tr><th>開始</th><td id="rStart"></td></tr>
+      <tr><th>終了</th><td id="rEnd"></td></tr>
+    </table>
+    <div class="markRow">
+      <div class="orbit"><div class="ring" id="rMark"><span></span><span></span><span></span></div></div>
+      <div><div style="font-size:13px;color:#555">確認番号</div><div class="code" id="rCode"></div>
+        <div class="now">いま <b id="rNow"></b></div></div>
+    </div>
+    <div class="sweep"></div>
+    <p class="note">この画面をスクリーンショットして提出しよう。</p>
+    <button id="backBtn" class="back">最初にもどる</button>
+  </div>
+</section>
+
+<!-- 先生用の鑑定 (#sensei) -->
+<section id="sensei" class="screen" hidden>
+  <div class="sen">
+    <h2>先生用 鑑定</h2>
+    <p>生徒が出した結果の画面の数字を、そのまま入れてください。確認番号と合えば「本物」です。</p>
+    <div class="two">
+      <div><label>集中していた時間</label><input id="vFocus" placeholder="12:34" inputmode="numeric"></div>
+      <div><label>離脱（回）</label><input id="vLeaves" placeholder="0" inputmode="numeric"></div>
+    </div>
+    <label>離れていた合計</label><input id="vAway" placeholder="0:00" inputmode="numeric">
+    <label>日付</label><input id="vDate" placeholder="2026-10-22">
+    <div class="two">
+      <div><label>開始</label><input id="vStart" placeholder="10:30:05" inputmode="numeric"></div>
+      <div><label>終了</label><input id="vEnd" placeholder="11:15:40" inputmode="numeric"></div>
+    </div>
+    <label>印（絵文字3つ。順番は問いません）</label>
+    <div class="picked" id="vPicked"></div>
+    <button class="sbtn sub" id="vClear">印を消す</button>
+    <div class="pal" id="vPal" style="margin-top:8px"></div>
+    <label>確認番号</label><input id="vCode" placeholder="ABC-DEF" autocapitalize="characters">
+    <button class="sbtn" id="vGo">鑑定する</button>
+    <div id="verdict"></div>
+    <hr>
+    <h2>見えない透かしを見る</h2>
+    <p>スクリーンショットの画像を選ぶと、背景の薄い文字（日付・時刻・印の番号・離脱回数・集中の秒数）を濃くして見せます。画像はこの端末の中で処理し、どこにも送りません。</p>
+    <input type="file" id="wmFile" accept="image/*">
+    <canvas id="wmCanvas"></canvas>
+    <hr>
+    <button class="sbtn sub" id="sOut">生徒の画面にもどる</button>
+  </div>
+</section>
+
+<script>
+(function(){
+'use strict';
+var KEY='imachigau.v1';
+var EMOJI=['🍎','🍌','🍇','🍉','🍓','🍑','🍍','🥝','🐶','🐱','🐼','🐸','🐧','🐙','🦊','🐢','🌵','🌻','🍄','🌙','🐝','🌈','🏀','🎸','🚀','🚲','🎈','🔑','🧊','🍩','🍙','🦋'];
+var SALT_A='imchg-7f3a', SALT_B='kq9-tsukue';
+var ALPHA='23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+var AWAY_MIN=800;      // これより短い途切れは数えない（ミリ秒）
+var NARROW_HOLD=900;   // 幅が縮んだ状態がこれだけ続いたら離脱
+var $=function(id){return document.getElementById(id)};
+
+/* ---------- 保存 ---------- */
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+var db=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}}
+function today(d){d=d||new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+function p2(n){return (n<10?'0':'')+n}
+function hms(d){return p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds())}
+function dur(sec){sec=Math.max(0,Math.floor(sec));var h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
+  return h?h+':'+p2(m)+':'+p2(s):m+':'+p2(s)}
+var WD='日月火水木金土';
+
+/* 端末の印（初めて開いたときに決まる） */
+if(!db.mark||db.mark.length!==3){
+  var r=new Uint32Array(3);(window.crypto||window.msCrypto).getRandomValues(r);
+  db.mark=[r[0]%32,r[1]%32,r[2]%32];db.markBorn=today();save();
+}
+
+/* ---------- 確認番号 ---------- */
+function fnv(s){var h=0x811c9dc5;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h>>>0}
+function code(focusSec,leaves,awaySec,date,start,end,mark,flags){
+  var s=['v1',focusSec,leaves,awaySec,date,start,end,mark.join('.'),flags].join('|');
+  var a=fnv(SALT_A+s),b=fnv(s+SALT_B),x=((a>>>2)^(b<<3)^(b>>>17))&0x3fffffff,out='';
+  for(var i=0;i<6;i++){out+=ALPHA[x&31];x>>>=5}
+  return out.slice(0,3)+'-'+out.slice(3);
+}
+/* 旗（生徒の画面には出さない。確認番号の中に混ぜる）
+   1=時計のゆがみ 2=途中で読み込み直し 4=今日「やめる」で一度リセットした 8=印が今日生まれた */
+var FLAGS=[[1,'時間のゆがみ（計測中に端末の時計が動かされた疑い）'],[2,'計測中にページを読み込み直した（または閉じて開き直した）'],
+  [4,'この日、計測を「やめる」で一度リセットしてから測り直した'],[8,'この端末の印は今日できた（初めて使った日か、データを消した可能性）']];
+
+/* ---------- 画面の切り替え ---------- */
+function show(id){['start','run','result','sensei'].forEach(function(s){$(s).hidden=(s!==id)})}
+
+/* ---------- 今、見ているか ---------- */
+var touch=(navigator.maxTouchPoints||0)>1;
+function fullWidth(){
+  var sw=screen.width,sh=screen.height,ang=0;
+  if(screen.orientation&&typeof screen.orientation.angle==='number')ang=screen.orientation.angle;
+  else if(typeof window.orientation==='number')ang=window.orientation;
+  var land=Math.abs(ang)%180===90;
+  return land?Math.max(sw,sh):Math.min(sw,sh);
+}
+function isNarrow(){
+  if(!touch)return false; // パソコンでは窓の大きさを問わない
+  var w=document.documentElement.clientWidth||window.innerWidth;
+  return w<fullWidth()*0.9;
+}
+var narrowSince=0;
+function narrowHeld(now){
+  if(isNarrow()){if(!narrowSince)narrowSince=now;return now-narrowSince>=NARROW_HOLD}
+  narrowSince=0;return false;
+}
+function activeNow(now){
+  if(document.visibilityState!=='visible')return false;
+  if(document.hasFocus&&!document.hasFocus())return false;
+  if(narrowHeld(now))return false;
+  return true;
+}
+
+/* ---------- 計測 ---------- */
+var S=null;            // 計測中のデータ（db.run）
+var wasActive=false,lastP=0,lastW=0,timer=null,lastSave=0;
+
+function startRun(){
+  if(isNarrow()){$('narrowMsg').hidden=false;return}
+  var now=Date.now();
+  S=db.run={startWall:now,focusMs:0,awayMs:0,leaves:0,awayStart:null,lastWall:now,flags:0};
+  if(db.resets&&db.resets.d===today())S.flags|=4;
+  if(db.markBorn===today())S.flags|=8;
+  save();
+  wasActive=true;lastP=performance.now();lastW=now;
+  show('run');paint();wake();loop();
+}
+function resumeRun(){
+  S=db.run;
+  S.flags|=2;
+  if(S.awayStart==null)S.awayStart=S.lastWall||Date.now();
+  save();
+  wasActive=false;lastP=performance.now();lastW=Date.now();
+  show('run');paint();wake();loop();
+  tick();
+}
+function loop(){clearInterval(timer);timer=setInterval(tick,250)}
+
+function tick(){
+  if(!S)return;
+  var now=Date.now(),p=performance.now(),act=activeNow(now);
+  if(wasActive){
+    var dP=p-lastP,dW=now-lastW;
+    if(dP>3000){ // 見えているはずなのに止まっていた（画面が消えた等）→離脱として扱う
+      S.awayStart=lastW;wasActive=false;
+    }else{
+      S.focusMs+=Math.max(0,dP);
+      if(Math.abs(dW-dP)>1500)S.flags|=1;
+    }
+  }
+  if(act!==wasActive){
+    if(!act){S.awayStart=now;}
+    else{
+      var a=now-(S.awayStart==null?now:S.awayStart);
+      if(a<0){S.flags|=1;a=0}
+      if(a>=AWAY_MIN){S.leaves++;S.awayMs+=a;showAway(S.leaves,a)}
+      S.awayStart=null;wake();
+    }
+    wasActive=act;S.lastWall=now;save();lastSave=now;
+  }
+  lastP=p;lastW=now;S.lastWall=now;
+  if(now-lastSave>1000){save();lastSave=now}
+  paint();
+}
+function paint(){
+  if(!S)return;
+  $('clock').textContent=dur(S.focusMs/1000);
+  $('runLeaves').textContent=S.leaves;
+}
+function hideNow(){ // 見えなくなる瞬間に必ず書き残す
+  if(!S)return;
+  if(wasActive){tick();if(wasActive){S.awayStart=Date.now();wasActive=false}}
+  S.lastWall=Date.now();save();
+}
+['visibilitychange','blur','focus','resize','pageshow','orientationchange'].forEach(function(ev){
+  (ev==='visibilitychange'?document:window).addEventListener(ev,function(){
+    if(document.visibilityState==='hidden')hideNow();else tick();
+  });
+});
+window.addEventListener('pagehide',hideNow);
+
+/* 画面が消えないようにする */
+var wl=null;
+function wake(){
+  if(!('wakeLock' in navigator)){$('wakeNote').textContent='画面が自動で消えると離脱になります（自動ロックに注意）';return}
+  navigator.wakeLock.request('screen').then(function(l){wl=l;$('wakeNote').textContent=''})
+    .catch(function(){$('wakeNote').textContent='画面が自動で消えると離脱になります（自動ロックに注意）'});
+}
+
+/* 離脱の赤い画面 */
+function showAway(n,ms){$('awayN').textContent=n;$('awayT').textContent=dur(ms/1000);$('away').hidden=false}
+$('away').addEventListener('click',function(){$('away').hidden=true});
+
+/* おわり（1秒長押し） */
+(function(){
+  var b=$('endBtn'),bar=b.querySelector('i'),t0=0,raf=0;
+  function down(e){e.preventDefault();t0=performance.now();step()}
+  function step(){var k=(performance.now()-t0)/1000;bar.style.width=Math.min(100,k*100)+'%';
+    if(k>=1){t0=0;bar.style.width='0';finish();return}raf=requestAnimationFrame(step)}
+  function up(){cancelAnimationFrame(raf);t0=0;bar.style.width='0'}
+  b.addEventListener('pointerdown',down);
+  ['pointerup','pointerleave','pointercancel'].forEach(function(e){b.addEventListener(e,up)});
+  b.addEventListener('contextmenu',function(e){e.preventDefault()});
+})();
+
+function finish(){
+  tick();
+  var end=Date.now(),sd=new Date(S.startWall),ed=new Date(end);
+  if(end<S.startWall)S.flags|=1;
+  var span=end-S.startWall;
+  if(span+5000<S.focusMs+S.awayMs)S.flags|=1;
+  var R={focus:Math.floor(S.focusMs/1000),leaves:S.leaves,away:Math.floor(S.awayMs/1000),
+    date:today(sd),wd:WD[sd.getDay()],start:hms(sd),end:hms(ed),mark:db.mark.slice(),flags:S.flags};
+  R.code=code(R.focus,R.leaves,R.away,R.date,R.start,R.end,R.mark,R.flags);
+  db.last=R;delete db.run;save();
+  S=null;clearInterval(timer);if(wl){try{wl.release()}catch(e){}wl=null}
+  $('away').hidden=true;showResult(R);
+}
+
+/* やめる */
+function ask(msg,yes){$('cfMsg').textContent=msg;$('confirm').hidden=false;
+  $('cfYes').onclick=function(){$('confirm').hidden=true;yes()};$('cfNo').onclick=function(){$('confirm').hidden=true}}
+$('quitBtn').addEventListener('click',function(){
+  ask('計測をやめて最初の画面にもどりますか？ここまでの記録は消えます。',function(){
+    db.resets={d:today(),n:((db.resets&&db.resets.d===today())?db.resets.n:0)+1};
+    delete db.run;save();S=null;clearInterval(timer);$('away').hidden=true;goStart();
+  });
+});
+
+/* ---------- 結果 ---------- */
+var nowTimer=null;
+function showResult(R){
+  show('result');
+  $('rFocus').textContent=dur(R.focus);
+  $('rLeaves').textContent=R.leaves+'回';
+  $('rAway').textContent=dur(R.away);
+  $('rDate').textContent=R.date+'（'+R.wd+'）';
+  $('rStart').textContent=R.start;$('rEnd').textContent=R.end;
+  $('rCode').textContent=R.code;
+  var sp=$('rMark').children;for(var i=0;i<3;i++)sp[i].textContent=EMOJI[R.mark[i]];
+  var b=$('badge');
+  if(R.leaves===0){b.innerHTML='<span class="gold">離脱ゼロ</span>'}
+  else{b.innerHTML='<span class="tally">離脱 <span class="t">'+tally(R.leaves)+'</span></span>'}
+  clearInterval(nowTimer);
+  var f=function(){$('rNow').textContent=hms(new Date())};f();nowTimer=setInterval(f,1000);
+  drawWM(R);
+}
+function tally(n){var st=['','一','丅','下','止','正'],s='';
+  for(var i=0;i<Math.floor(n/5);i++)s+='正';if(n%5)s+=st[n%5];
+  return s}
+function drawWM(R){
+  var c=$('wm'),dpr=window.devicePixelRatio||1,W=window.innerWidth,H=window.innerHeight;
+  c.width=W*dpr;c.height=H*dpr;var g=c.getContext('2d');g.scale(dpr,dpr);
+  g.fillStyle='#f6f1e4';g.fillRect(0,0,W,H);
+  g.fillStyle='#f4efe2'; // 背景と少しだけ違う色（人の目では気づきにくい）
+  g.font='bold 15px Menlo,monospace';
+  var t=R.date+' '+R.start+'-'+R.end+' M'+R.mark.join('.')+' L'+R.leaves+' F'+R.focus+' ';
+  g.save();g.translate(W/2,H/2);g.rotate(-0.33);
+  for(var y=-H;y<H;y+=34){for(var x=-W*1.2+(y%68?120:0);x<W*1.2;x+=g.measureText(t).width+20){g.fillText(t,x,y)}}
+  g.restore();
+}
+$('backBtn').addEventListener('click',function(){clearInterval(nowTimer);goStart()});
+$('lastBtn').addEventListener('click',function(){if(db.last)showResult(db.last)});
+window.addEventListener('resize',function(){if(!$('result').hidden&&db.last)drawWM(db.last)});
+
+/* ---------- はじめ ---------- */
+function goStart(){
+  show('start');$('lastBtn').hidden=!db.last;$('narrowMsg').hidden=true;
+  if(location.hash==='#sensei')history.replaceState(null,'',location.pathname+location.search);
+}
+$('goBtn').addEventListener('click',startRun);
+
+/* ---------- 先生用 鑑定 ---------- */
+var picked=[];
+(function(){
+  var pal=$('vPal');
+  EMOJI.forEach(function(e,i){var b=document.createElement('button');b.textContent=e;
+    b.onclick=function(){if(picked.length<3){picked.push(i);showPicked()}};pal.appendChild(b)});
+  $('vClear').onclick=function(){picked=[];showPicked()};
+  $('vDate').value=today();
+})();
+function showPicked(){$('vPicked').textContent=picked.map(function(i){return EMOJI[i]}).join(' ')}
+function norm(s){return String(s||'').replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0)})
+  .replace(/[：]/g,':').replace(/[／\/．.]/g,'-').trim()}
+function parseDur(s){s=norm(s).replace(/-/g,':');if(!s)return NaN;var a=s.split(':').map(Number);
+  if(a.some(isNaN))return NaN;var v=0;a.forEach(function(x){v=v*60+x});return v}
+function parseTime(s){s=norm(s).replace(/-/g,':');var a=s.split(':');if(a.length!==3)return null;
+  return a.map(function(x){return p2(Number(x))}).join(':')}
+function parseDate(s){s=norm(s);var a=s.split('-');if(a.length!==3)return null;
+  return a[0]+'-'+p2(Number(a[1]))+'-'+p2(Number(a[2]))}
+$('vGo').addEventListener('click',function(){
+  var v=$('verdict');v.className='';
+  var F=parseDur($('vFocus').value),L=Number(norm($('vLeaves').value)||'x'),A=parseDur($('vAway').value||'0:00'),
+      D=parseDate($('vDate').value),st=parseTime($('vStart').value),en=parseTime($('vEnd').value),
+      C=String($('vCode').value).toUpperCase().replace(/[^0-9A-Z]/g,'');
+  if(isNaN(F)||isNaN(L)||isNaN(A)||!D||!st||!en||picked.length!==3||C.length!==6){
+    v.className='ng';v.innerHTML='入力が足りません（時間は 12:34、時刻は 10:30:05、印は3つ、確認番号は6文字）';return}
+  var want=C.slice(0,3)+'-'+C.slice(3),hit=-1;
+  var P=picked,perms=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+  perms.forEach(function(o){var m=[P[o[0]],P[o[1]],P[o[2]]];
+    for(var f=0;f<16&&hit<0;f++){if(code(F,L,A,D,st,en,m,f)===want)hit=f}});
+  if(hit<0){v.className='ng';v.innerHTML='<b>書き換えあり（または入力ちがい）</b><br>数字・時刻・印・確認番号のどれかが、記録と合いません。入力を見直しても合わなければ、画面が書き換えられています。';return}
+  var html='<b>本物</b>（この端末で記録された数字です）';
+  var fl=FLAGS.filter(function(x){return hit&x[0]}).map(function(x){return '・'+x[1]});
+  if(fl.length)html+='<br><br><b>気になる記録</b><br>'+fl.join('<br>');
+  var sp=(function(){var a=st.split(':').map(Number),b=en.split(':').map(Number);return (b[0]*3600+b[1]*60+b[2])-(a[0]*3600+a[1]*60+a[2])})();
+  if(sp>=0&&sp-(F+A)>60)html+='<br>・参考：開始〜終了の間に、集中にも離脱にも入らない時間が '+dur(sp-(F+A))+' あります';
+  v.className='ok';v.innerHTML=html;
+});
+/* 透かしを濃くする（端末の中だけで処理） */
+$('wmFile').addEventListener('change',function(e){
+  var file=e.target.files&&e.target.files[0];if(!file)return;
+  var url=URL.createObjectURL(file),img=new Image();
+  img.onload=function(){
+    var c=$('wmCanvas'),g=c.getContext('2d');c.width=img.naturalWidth;c.height=img.naturalHeight;
+    g.drawImage(img,0,0);var d=g.getImageData(0,0,c.width,c.height),px=d.data,hist=new Uint32Array(256);
+    for(var i=0;i<px.length;i+=4){hist[(px[i]*3+px[i+1]*6+px[i+2])/10|0]++}
+    var mode=0;for(var k=1;k<256;k++)if(hist[k]>hist[mode])mode=k;
+    for(i=0;i<px.length;i+=4){var y=(px[i]*3+px[i+1]*6+px[i+2])/10;var o=(y-mode)*28+200;o=o<0?0:o>255?255:o;px[i]=px[i+1]=px[i+2]=o}
+    g.putImageData(d,0,0);c.style.display='block';URL.revokeObjectURL(url);
+  };img.src=url;
+});
+$('sOut').addEventListener('click',function(){goStart()});
+
+/* ---------- 起動 ---------- */
+function route(){
+  if(location.hash==='#sensei'&&!db.run){show('sensei');return}
+  if(db.run){resumeRun();return}
+  goStart();
+}
+window.addEventListener('hashchange',route);
+route();
+})();
+</script>
+</body>
+</html>
