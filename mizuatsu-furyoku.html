@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>水の中の言い分 ― 水圧と浮力（物理基礎）</title>
+<style>
+:root{
+  --paper:#FFFFFF;      /* 紙 */
+  --ai:#3E3A8C;         /* 藍の線＝地の文・絵 */
+  --ai-soft:#8C89BF;    /* 藍のうすい線（補助・まだの所） */
+  --shu:#C8372D;        /* 朱＝つきつけの一語・まちがいの言葉だけ */
+  --mizu:#E9E8F4;       /* 水のうすい面 */
+  --desk:#E6E3DC;       /* 画面のまわり（机） */
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--desk);touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;color:var(--ai)}
+#st{position:absolute;left:0;top:0;width:1180px;height:820px;transform-origin:0 0;background:var(--paper);overflow:hidden}
+.v{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.12em;letter-spacing:.02em}
+.u{font-family:"Times New Roman",Times,serif;font-style:normal}
+sup,sub{font-size:.62em;line-height:0}
+button{font:inherit;color:var(--ai);background:var(--paper);border:3px solid var(--ai);border-radius:0;cursor:pointer;touch-action:manipulation}
+button:active,button.press{transform:scale(.95);background:var(--mizu)}
+.scr{position:absolute;inset:0;display:none}
+.scr.on{display:block}
+.koma{position:absolute;border:3px solid var(--ai);background:var(--paper)}
+
+/* ---------- 表紙（面の一覧） ---------- */
+#cv h1{position:absolute;left:40px;top:22px;margin:0;font-size:34px;letter-spacing:.06em;font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif}
+#cv .sub{position:absolute;left:42px;top:72px;font-size:16px}
+#cv .goal{position:absolute;left:40px;top:100px;width:1100px;font-size:17px;line-height:1.6}
+#cv .goal b{color:var(--shu)}
+#cv .steps3{display:inline-block;margin-left:10px;padding:0 10px;border:2px solid var(--ai);font-size:16px}
+.men{position:absolute;width:264px;height:284px;padding:12px 14px;font-size:14px;line-height:1.5}
+.men .no{font-size:13px;letter-spacing:.1em}
+.men .hook{font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;font-size:18px;font-weight:700;line-height:1.4;margin:28px 0 6px}
+.men .shiki{font-size:15px;margin-bottom:4px}
+.men .ng i{font-style:normal;color:var(--shu)}
+.men .ql{position:absolute;left:14px;right:12px;bottom:10px;font-size:13px;line-height:1.4}
+.men .play{position:absolute;right:10px;top:8px;min-height:48px;padding:0 14px;font-size:17px;font-weight:700}
+.men.last .stamp{left:auto;right:128px;top:16px}
+.men .stamp{position:absolute;left:58px;top:12px;font-size:13px;font-weight:700;padding:0 6px;border:2px solid var(--ai);transform:rotate(-6deg)}
+.men.last{border-width:5px}
+.men.note{border-style:dashed;border-color:var(--ai-soft)}
+.men.note button{min-height:48px;padding:0 14px;font-size:14px;border-width:2px;margin-top:10px}
+
+/* ---------- 遊ぶ画面 ---------- */
+#hd{position:absolute;left:0;top:0;width:1180px;height:78px}
+#hd .ttl{position:absolute;left:170px;top:20px;width:500px;font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;font-size:22px;font-weight:700;white-space:nowrap;overflow:hidden}
+.back{position:absolute;left:28px;top:14px;min-height:50px;padding:0 14px;font-size:16px}
+#help{position:absolute;right:28px;top:14px;width:52px;height:50px;font-size:24px;font-weight:700}
+#calm{position:absolute;right:94px;top:14px;min-height:50px;padding:0 10px;font-size:13px;border-width:1px}
+#prog{position:absolute;right:208px;top:22px;display:flex;gap:5px;font-size:13px}
+#prog span{padding:4px 8px;border:2px solid var(--ai-soft);color:var(--ai-soft)}
+#prog span.now{border-color:var(--ai);color:var(--ai);font-weight:700}
+#prog span.done{border-color:var(--ai);background:var(--ai);color:#fff}
+
+#scene{left:36px;top:88px;width:552px;height:556px;overflow:hidden}
+#scene svg{position:absolute;left:0;top:0}
+#scene.drawmode{cursor:crosshair}
+#sceneText{position:absolute;left:16px;top:10px;width:516px;font-size:17px;line-height:1.55}
+#sceneMsg{position:absolute;left:16px;bottom:10px;width:516px;font-size:16px;line-height:1.5;background:rgba(255,255,255,.92)}
+#board{left:606px;top:88px;width:540px;height:250px;padding:12px 18px;overflow:hidden}
+#board .row{display:flex;align-items:baseline;gap:10px;font-size:21px;white-space:nowrap}
+#board .row .lb{width:112px;flex:none;font-size:14px;color:var(--ai-soft)}
+#board .row.on .lb{color:var(--ai);font-weight:700}
+#board .slot{display:inline-block;min-width:150px;border-bottom:2px dashed var(--ai-soft);color:transparent;font-size:18px}
+#board .slot.f{font-size:21px}
+#board .slot.fill{border-bottom:0;color:var(--ai)}
+#board .sent{font-size:18px;line-height:1.95}
+#board .sent .h{font-size:13px;color:var(--ai-soft);display:block;line-height:1.4;margin-bottom:2px}
+#board .bl{display:inline;padding:0 4px;border-bottom:2px dashed var(--ai-soft);color:var(--ai-soft)}
+#board .bl.on{border-bottom-color:var(--ai);color:var(--ai);font-weight:700}
+#board .bl.fill{border-bottom:2px solid var(--ai);color:var(--ai)}
+#q{left:606px;top:352px;width:540px;height:292px;padding:14px 16px}
+#q .ask{font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;font-size:19px;font-weight:700;line-height:1.45;min-height:54px}
+#q .ask small{font-weight:400;font-size:16px}
+#q .tag{display:inline-block;font-size:13px;padding:0 8px;border:2px solid var(--ai);margin-right:8px;vertical-align:3px;font-weight:400}
+#choices{margin-top:6px}
+#choices button{display:block;width:100%;min-height:56px;margin-top:8px;font-size:19px;text-align:left;padding:4px 16px;border-width:2px;line-height:1.35}
+#choices.figs{display:flex;gap:12px}
+#choices.figs button{width:160px;height:168px;padding:4px;text-align:center;font-size:17px}
+#decide{display:none;width:100%;min-height:64px;margin-top:14px;font-size:21px;font-weight:700}
+#data{left:36px;top:658px;width:1110px;height:136px;padding:10px 18px;font-size:17px;line-height:1.7}
+#data .h{font-size:13px;letter-spacing:.1em}
+#data .grid{display:grid;grid-template-columns:repeat(2,1fr);column-gap:30px;line-height:1.55}
+
+#ok{position:absolute;left:606px;top:352px;width:540px;height:292px;padding:20px 22px;display:none;background:var(--paper);border:3px solid var(--ai)}
+#ok .big{font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;font-size:30px;font-weight:700;margin-bottom:10px}
+#ok .why{font-size:20px;line-height:1.6}
+#ok .tap{position:absolute;right:20px;bottom:14px;font-size:14px;color:var(--ai-soft)}
+
+/* つきつけの札 */
+#tk{position:absolute;inset:0;display:none;background:rgba(255,255,255,.9)}
+#tk .lead{position:absolute;left:0;width:1180px;top:84px;text-align:center;font-size:20px;font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;font-weight:700}
+#tkKoma{left:150px;top:130px;width:880px;height:360px}
+#tkKoma svg{position:absolute;left:0;top:0}
+#claim{position:absolute;left:250px;top:62px;width:580px;font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;font-size:27px;line-height:1.75}
+#claim .w{white-space:nowrap;padding:2px 3px;border-bottom:2px dotted rgba(62,58,140,.45);cursor:pointer}
+#claim .w.hit{color:var(--shu);text-decoration:line-through;text-decoration-thickness:3px;border-bottom:0}
+#huff{position:absolute;left:44px;top:178px;font-size:24px;font-weight:700;opacity:0;transition:opacity .15s}
+#burst{position:absolute;left:0;top:0;width:1180px;height:820px;pointer-events:none;display:none}
+#fix{position:absolute;left:150px;top:508px;width:880px;min-height:130px;padding:14px 22px 34px;border:3px solid var(--ai);background:var(--paper);display:none;font-size:21px;line-height:1.6}
+#fix b{color:var(--shu)}
+#tkNext{position:absolute;right:170px;top:612px;display:none;font-size:14px;color:var(--ai-soft)}
+#tkHint{position:absolute;left:150px;top:500px;width:880px;text-align:center;font-size:16px;color:var(--ai-soft)}
+
+/* クリア */
+#cl h2{position:absolute;left:40px;top:18px;margin:0;font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;font-size:28px}
+.pg{position:absolute;width:540px;height:250px;padding:14px 18px;font-size:19px;line-height:1.65;overflow:hidden}
+.pg .n{font-size:13px;letter-spacing:.1em}
+#cl .msg{position:absolute;left:40px;top:632px;width:1100px;font-size:19px;line-height:1.6}
+#cl .msg b{color:var(--shu)}
+#cl .btns{position:absolute;left:40px;top:716px;display:flex;gap:16px}
+#cl .btns button{min-height:62px;padding:0 24px;font-size:19px;font-weight:700}
+
+/* 札 */
+.fuda{position:absolute;inset:0;display:none;background:rgba(255,255,255,.88)}
+.fuda .in{position:absolute;left:190px;top:110px;width:800px;padding:26px 32px;border:3px solid var(--ai);background:var(--paper);font-size:20px;line-height:1.7}
+.fuda h3{margin:0 0 8px;font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;font-size:24px}
+.fuda .btns{margin-top:18px;display:flex;gap:16px}
+.fuda .btns button{min-height:58px;padding:0 26px;font-size:19px}
+.kyo{padding:8px 14px;background:var(--mizu);font-size:18px;margin:8px 0}
+</style>
+</head>
+<body>
+<div id="st">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="hand"><feTurbulence id="turb" type="fractalNoise" baseFrequency=".03" numOctaves="2" seed="2"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
+    <pattern id="hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)"><line x1="0" y1="0" x2="0" y2="14" stroke="#3E3A8C" stroke-width="1.6" opacity=".38"/></pattern>
+    <pattern id="hatchS" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)"><line x1="0" y1="0" x2="0" y2="7" stroke="#3E3A8C" stroke-width="1" opacity=".38"/></pattern>
+    <pattern id="snow" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="4" cy="5" r="1.4" fill="#3E3A8C" opacity=".35"/><circle cx="12" cy="12" r="1.4" fill="#3E3A8C" opacity=".35"/></pattern>
+    <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3E3A8C"/></marker>
+  </defs>
+</svg>
+
+<!-- ===================== 表紙 ===================== -->
+<section class="scr on" id="cv">
+  <h1>水の中の言い分</h1>
+  <div class="sub">物理基礎　水圧と浮力（教科書 p.95〜99）</div>
+  <div class="goal">ゴールは <b>「最後の面が解ければ、教科書 p.95〜99 の問題が解ける」</b>。場面は毎回ちがうので答えは覚えられない。どの面も同じ手順だけが残る。
+    <span class="steps3">① どの式？ → ② 文字に何を入れる？ → ③ 力の矢印</span><br>
+    まちがえると、まちがえた考えの「言い分」が出てくる。おかしい言葉を指でつきつけて、正しい中身を1行で持ち帰る。計算はしない。</div>
+  <div id="menList"></div>
+</section>
+
+<!-- ===================== 遊ぶ画面 ===================== -->
+<section class="scr" id="pl">
+  <div id="hd">
+    <button class="back" data-quit>◀ 一覧へ</button>
+    <div class="ttl" id="ttl"></div>
+    <div id="prog"></div>
+    <button id="calm">演出を減らす</button>
+    <button id="help" aria-label="遊び方">？</button>
+  </div>
+  <div class="koma" id="scene">
+    <svg id="sv" width="546" height="550" viewBox="0 0 546 550"></svg>
+    <div id="sceneText"></div>
+    <div id="sceneMsg"></div>
+  </div>
+  <div class="koma" id="board"></div>
+  <div class="koma" id="q">
+    <div class="ask" id="ask"></div>
+    <div id="choices"></div>
+    <button id="decide">この矢印で決める</button>
+  </div>
+  <div id="ok"><div class="big" id="okBig"></div><div class="why" id="okWhy"></div><div class="tap">どこを押しても次へ</div></div>
+  <div class="koma" id="data"><div class="h">わかっていること（計算はしない）</div><div class="grid" id="dataGrid"></div></div>
+
+  <div id="tk">
+    <div class="lead">その考え、どこかおかしい。<span style="color:var(--shu)">おかしい言葉</span>を指でつきつけろ</div>
+    <div class="koma" id="tkKoma">
+      <svg width="874" height="354" viewBox="0 0 874 354"><g id="tkDraw" filter="url(#hand)" fill="none" stroke="#3E3A8C" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></g></svg>
+      <div id="claim"></div>
+      <div id="huff">ふふん</div>
+    </div>
+    <div id="tkHint"></div>
+    <div id="fix"></div>
+    <div id="tkNext">どこを押しても、もう一度その問いへ</div>
+  </div>
+  <svg id="burst" viewBox="0 0 1180 820"></svg>
+</section>
+
+<!-- ===================== クリア ===================== -->
+<section class="scr" id="cl">
+  <h2 id="clTitle"></h2>
+  <div class="koma pg" id="pg1" style="left:40px;top:76px"></div>
+  <div class="koma pg" id="pg2" style="left:600px;top:76px"></div>
+  <div class="koma pg" id="pg3" style="left:40px;top:342px"></div>
+  <div class="koma pg" id="pg4" style="left:600px;top:342px"></div>
+  <div class="msg" id="clMsg"></div>
+  <div class="btns"><button id="again">まちがえた所をもう一度</button><button id="nextFace">次の面へ</button><button data-home>一覧へもどる</button></div>
+</section>
+
+<div class="fuda" id="learn"><div class="in">
+  <h3 id="learnH">この面で使う言葉（読まずにとばしてもよい）</h3>
+  <div id="learnBody"></div>
+  <div class="btns"><button id="learnGo">はじめる</button></div>
+</div></div>
+<div class="fuda" id="howto"><div class="in">
+  <h3>遊び方</h3>
+  <div>右下の問いに答えると、右上の板がうまっていく。<br>
+  まちがえると、その考えの<b>言い分</b>が出る。おかしい言葉を指で押す（つきつける）と、正しい中身が1行出る。<br>
+  矢印の問いは、左の絵の「ここから」の点から<b>指でひっぱって</b>描き、「この矢印で決める」を押す。</div>
+  <div class="kyo" id="howtoNow"></div>
+  <div class="btns"><button data-close>とじる</button></div>
+</div></div>
+<div class="fuda" id="quitF"><div class="in" style="width:600px;left:290px;top:220px">
+  <h3>やめて一覧へもどる？</h3>
+  <div>この面の答えは消える（できた面の記録は残る）。</div>
+  <div class="btns"><button id="quitYes">一覧へもどる</button><button data-close>つづける</button></div>
+</div></div>
+<div class="fuda" id="resetF"><div class="in" style="width:600px;left:290px;top:220px">
+  <h3>この端末の記録を消す？</h3>
+  <div>「できた」の印と、最後の面の記録が消える。</div>
+  <div class="btns"><button id="resetYes">消す</button><button data-close>やめる</button></div>
+</div></div>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const st=$('#st');
+const v=s=>`<span class="v">${s}</span>`;
+const E=n=>`10<sup>${n}</sup>`;
+
+/* ---------- 画面の大きさに合わせる ---------- */
+function fit(){const k=Math.min(innerWidth/1180,innerHeight/820);st.style.transform=`translate(${(innerWidth-1180*k)/2}px,${(innerHeight-820*k)/2}px) scale(${k})`}
+addEventListener('resize',fit);fit();
+
+/* ---------- 演出を減らす・線のゆれ ---------- */
+let calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+$('#calm').onclick=()=>{calm=!calm;$('#calm').textContent=calm?'演出を戻す':'演出を減らす'};
+const turb=$('#turb');let seedI=0;
+setInterval(()=>{if(calm)return;seedI=(seedI+1)%3;turb.setAttribute('seed',[2,5,9][seedI])},200);
+
+/* ---------- 音（最初のタップで準備） ---------- */
+let ac=null;
+addEventListener('pointerdown',()=>{if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}else if(ac.state==='suspended')ac.resume()},{capture:true});
+function tone(f,t0,d,type='triangle',vol=.12){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f*(1+(Math.random()-.5)*.08);g.gain.setValueAtTime(0,ac.currentTime+t0);g.gain.linearRampToValueAtTime(vol,ac.currentTime+t0+.01);g.gain.exponentialRampToValueAtTime(.0005,ac.currentTime+t0+d);o.connect(g).connect(ac.destination);o.start(ac.currentTime+t0);o.stop(ac.currentTime+t0+d+.05)}
+function noise(len,pow,vol,freq){if(!ac)return;const n=ac.sampleRate*len|0,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,pow);const s=ac.createBufferSource(),g=ac.createGain();g.gain.value=vol;s.buffer=b;if(freq){const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;s.connect(f).connect(g)}else s.connect(g);g.connect(ac.destination);s.start()}
+const snd={
+  ok(){noise(.08,2,.25,2600);tone(660,.03,.25);tone(990,.11,.35)},
+  strike(){noise(.22,3,.35);tone(110,0,.35,'sine',.4);tone(523,.12,.4,'square',.05)},
+  huff(){tone(220,0,.18,'sine',.1);tone(196,.12,.22,'sine',.1)},
+  clear(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.11,.6,'triangle',.11))}
+};
+
+/* ---------- この端末に残す記録 ---------- */
+const KEY='mizu_iibun_v1';
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
+function save(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
+let rec=load();rec.done=rec.done||{};
+
+/* ===================== 面の中身 ===================== */
+/* 言い分 claim: [文字, 1=おかしい言葉]。ichigo: つきつけの一語（答えの中身と関係させる） */
+const C=(claim,ichigo,fix)=>({claim,ichigo,fix});
+const W='font-family="Hiragino Sans, sans-serif" fill="#3E3A8C"';
+const lab=(x,y,t,s=15,a='')=>`<text x="${x}" y="${y}" ${W} font-size="${s}" ${a}>${t}</text>`;
+const surf=y=>`<path d="M0,${y} C60,${y-4} 120,${y+4} 180,${y} S300,${y-4} 360,${y} S480,${y+4} 546,${y-1}" stroke-width="3"/>`;
+
+const FACES=[
+/* ---------------- 面1 圧力 ---------------- */
+{id:'f1',no:'面1',tag:'圧力',hook:'雪の上、板をはくと沈まないのはなぜ？',
+ shiki:`${v('p')} = ${v('F')} / ${v('S')}　＋矢印`,ng:'<i>F</i> に 9.8 をかける／<i>S</i> を cm² のまま／面積で力が変わる',ql:'教科書 問41（圧力）が解ける',
+ learn:`<div class="kyo">圧力とは、面をまっすぐ押す力が「1 m² あたり何 N になるか」のこと。同じ力でも、広い面で受ければ圧力は小さく、せまい面なら大きい。教科書 問41（p.95）のあたりも見よう。</div><div>同じ重さでも、<b>押す面積</b>がちがうと沈み方がちがう。この面では計算はしない。<b>式と、文字に何を入れるか</b>まで。</div>`,
+ help:{式:'圧力＝面を垂直に押す力÷面積。p＝F/S。',中身:'F は面を押す力（重さそのもの）。S は面にふれている面積で、m² にそろえる。',矢印:'雪の面が受ける力は、板が押す向き。大きさは重さと同じ。'},
+ parts:[{
+  text:'ブーツだけだと雪に沈むのに、<b>板をはくと沈まない</b>。雪の面が受ける圧力を、式で言おう。',
+  draw:`<rect x="0" y="380" width="546" height="170" fill="url(#snow)" stroke="none"/>${surf(380)}
+   <rect x="110" y="368" width="320" height="12" fill="#fff" stroke-width="3"/><path d="M110,374 q-18,-2 -24,-16" stroke-width="3"/>
+   <path d="M252,368 l6,-90 M292,368 l-6,-90" stroke-width="5"/><rect x="236" y="196" width="72" height="88" fill="#fff" stroke-width="3.5"/>
+   <rect x="300" y="206" width="34" height="62" fill="#fff" stroke-width="3"/><circle cx="272" cy="176" r="18" fill="#fff" stroke-width="3"/>
+   <path d="M240,212 l-26,50 M304,212 l26,46" stroke-width="4"/>`,
+  labels:lab(110,444,'板2枚が雪にふれる面積 0.30 m²',15)+lab(350,190,'人と板',15)+lab(350,208,'重さ 600 N',15),
+  data:[['人と板の重さ','<span class="u">600 N</span>'],['板2枚が雪にふれる面積',`<span class="u">0.30 m²</span>（＝3000 cm²）`],['板2枚の体積','<span class="u">0.0060 m³</span>'],['ブーツだけのとき ふれる面積','<span class="u">0.060 m²</span>']],
+  board:[{lb:'圧力の式',a:`${v('p')} = ${v('F')} / ${v('S')}`,f:1},{lb:`${v('F')} に入れる`,a:'重さ 600 N（そのまま）'},{lb:`${v('S')} に入れる`,a:'ふれる面積 0.30 m²'},{lb:'力の矢印',a:'真下・重さと同じ長さ'}],
+  steps:[
+   {tag:'式',row:0,ask:`雪の面が受ける <b>圧力 ${v('p')}</b> を表す式は？`,okWhy:'圧力＝面を垂直に押す力÷面積。1 m² あたり何 N か。',
+    ch:[{t:`${v('p')} = ${v('F')} / ${v('S')}`,ok:1},
+     {t:`${v('p')} = ${v('FS')}`,...C([['力が大きくて、'],['面積も大きいほど強く押す',1],['から p＝FS。']],'面積で割る！','圧力は<b>1 m² あたりの力</b>。力を面積で<b>割る</b>。面積が大きいほど圧力は小さい（だから板で沈まない）。')},
+     {t:`${v('p')} = ${v('S')} / ${v('F')}`,...C([['どっちで割っても同じでしょ。'],['面積を力で割る',1],['。']],'力÷面積！','p＝F/S。<b>力 F を面積 S で割る</b>（単位 N/m²＝Pa）。')}]},
+   {tag:'中身',row:1,ask:`${v('F')}（面を押す力）に入れるのは？`,okWhy:'雪の面を押す力は、人と板の重さ 600 N そのもの。',
+    ch:[{t:'人と板の重さ　600 N',ok:1},
+     {t:'600×9.8 N',...C([['重さには'],['とりあえず 9.8 をかける',1],['のがお約束。']],'もう N！','600 N は<b>もう力（重さ）</b>。9.8 をかけるのは、質量〔kg〕から重さを出すときだけ。')},
+     {t:'板をはくと小さくなる力',...C([['板をはくと、'],['雪を押す力そのものが小さくなる',1],['。']],'力は同じ！','雪を押す力は<b>重さ 600 N のまま</b>。板で変わるのは<b>面積</b>。だから圧力が小さくなる。')}]},
+   {tag:'中身',row:2,ask:`${v('S')}（面積）に入れるのは？`,okWhy:'S は雪にふれている面の面積。単位は m² にそろえる。',
+    ch:[{t:'板が雪にふれる面積　0.30 m²',ok:1},
+     {t:'3000 cm²（cm² のまま）',...C([['面積は'],['cm² のまま',1],['でいい。']],'m² に直す！','Pa は N/<b>m²</b>。面積は <b>m² に直して</b> 0.30 m² を入れる。')},
+     {t:'板2枚の体積　0.0060 m³',...C([['板の大きさだから、'],['体積で割る',1],['んだよ。']],'ふれる面積！','圧力は<b>面積</b>で割る。体積〔m³〕ではなく、<b>雪にふれる面の面積</b>〔m²〕。')}]},
+   {tag:'矢印',row:3,ask:'左の絵に、<b>雪の面が板から受ける力</b> を描く。<br><small>「ここから」の点から指でひっぱる → 決める</small>',okWhy:'雪の面が受ける力は、板が押す向き＝真下。大きさは重さと同じ。',
+    arrow:{start:{x:360,y:384},e:{x:0,y:120},len:1,label:'F',given:[{x:272,y:236,dx:0,dy:120,label:'重さ',lx:-56,ly:-60}],
+     ng:{rev:C([['雪は板を'],['押し返すから上向き',1],['。']],'雪が受ける力！','上向きは<b>板が雪から受ける</b>力。雪の面が受ける力は、板が押す向き＝<b>下向き</b>（面に垂直）。'),
+      side:C([['板はななめに雪をおさえるから、'],['ななめ',1],['。']],'面に垂直！','雪の面は水平。圧力の力は<b>面に垂直＝真下</b>。'),
+      long:C([['板が広いから、'],['押す力も大きくなる',1],['。']],'力は同じ！','面積が広くなっても<b>力は重さのまま</b>。同じ長さ。小さくなるのは圧力（1 m² あたり）。'),
+      short:C([['広い板だと'],['力が分かれて小さくなる',1],['。']],'力は同じ！','面積が広くなっても<b>力は重さのまま</b>。同じ長さ。小さくなるのは圧力（1 m² あたり）。')}}}
+  ]}],
+ clear:{title:'板で沈まない理由、式で言えた',p1:`圧力　${v('p')} = ${v('F')} / ${v('S')}<br>1 m² あたりの力。面積が大きいほど小さい。`,
+  p2:`${v('F')}＝重さ 600 N（9.8 はかけない）<br>${v('S')}＝雪にふれる面積（m² に直す）`,p3:'雪の面が受ける力は<b>真下</b>。<br>大きさは重さと<b>同じ</b>。',
+  p4:'教科書 <b>問41</b>（直方体の置き方を変える）と同じ手順。<br>置く面を変えても<b>力は重さのまま</b>、変わるのは <span class="v">S</span>。'}},
+
+/* ---------------- 面2 水圧 ---------------- */
+{id:'f2',no:'面2',tag:'水圧',hook:'ペットボトルの3つの穴、いちばん勢いよく出るのは？',
+ shiki:`${v('p')} = ${v('ρhg')}　＋矢印（面に垂直）`,ng:'<i>h</i> を底から測る／容器の太さで変わる／水圧は下向きだけ',ql:'教科書 水圧の式・水圧による力の向きが分かる',
+ learn:`<div class="kyo">水圧は、その点より上にある水の重さで生まれる。だから深い所ほど大きい。同じ深さなら、上・下・横のどちらを向いた面でも同じだけ押される。</div><div class="kyo">水が面を押す力は、いつもその面に直角の向き。教科書 問42（p.97）の前の説明も見よう。</div>`,
+ help:{式:'水圧 p＝ρhg（ρ は水の密度、h は水深、g は重力加速度の大きさ）。',中身:'h は水面から測った深さ。水圧は深さだけで決まり、入れ物の太さや形には左右されない。',矢印:'水圧による力は、面に垂直に押す向き。たての壁なら真横。'},
+ parts:[{
+  text:'水を入れたペットボトルの横に、深さのちがう穴が3つ。<b>どの穴から勢いよく出る？</b>',
+  draw:`<path d="M200,500 V160 Q200,150 230,140 L250,124 V104 H290 V124 L310,140 Q340,150 340,160 V500 Z" fill="#fff" stroke-width="3.5"/>
+   <rect x="203" y="220" width="134" height="277" fill="url(#hatch)" stroke="none"/><path d="M200,220 H340" stroke-width="2.5"/>
+   <circle cx="340" cy="290" r="6" fill="#fff" stroke-width="2.5"/><circle cx="340" cy="360" r="6" fill="#fff" stroke-width="2.5"/><circle cx="340" cy="430" r="6" fill="#fff" stroke-width="2.5"/>
+   <path d="M150,500 H420" stroke-width="2.5"/><path d="M182,222 h-10 v206 h10" stroke-width="2"/><path d="M122,432 h-10 v66 h10" stroke-width="2"/>`,
+  labels:lab(212,214,'水面',14)+lab(356,295,'上')+lab(356,365,'中')+lab(356,436,'下')+lab(96,330,'水面から',13)+lab(110,348,'0.15 m',14)+lab(40,470,'底から',13)+lab(40,488,'0.050 m',14),
+  data:[['水面からの深さ（上・中・下）','<span class="u">0.050 m・0.10 m・0.15 m</span>'],['下の穴の、底からの高さ','<span class="u">0.050 m</span>'],['ボトルの高さ','<span class="u">0.25 m</span>'],['水の密度',`<span class="u">1.0×${E(3)} kg/m³</span>`],['重力加速度の大きさ','<span class="u">9.8 m/s²</span>']],
+  board:[{lb:'水圧の式',a:`${v('p')} = ${v('ρhg')}`,f:1},{lb:`${v('h')} に入れる`,a:'水面からの深さ 0.15 m'},{lb:'太さを変えると',a:'水圧は変わらない'},{lb:'いちばん強い',a:'下の穴（いちばん深い）'},{lb:'壁を押す力',a:'真横・外向き（面に垂直）'}],
+  steps:[
+   {tag:'式',row:0,ask:`穴のところの <b>水圧 ${v('p')}</b> を表す式は？`,okWhy:'水圧は深さ h に比例する。p＝ρhg（ρ は水の密度）。',
+    ch:[{t:`${v('p')} = ${v('ρhg')}`,ok:1},
+     {t:`${v('p')} = ${v('ρVg')}`,...C([['水の中の力は'],['全部 ρVg',1],['で出せる。']],'それは浮力！','ρVg は<b>浮力〔N〕</b>の式。1点の水圧〔Pa〕は <b>p＝ρhg</b>。')},
+     {t:`${v('p')} = ${v('ρh')}`,...C([['ρ と深さがあれば十分。'],['g はいらない',1],['。']],'g がいる！','水圧は<b>上にある水の重さ</b>による。重さにするには g がいる。p＝ρhg。')}]},
+   {tag:'中身',row:1,ask:`いちばん下の穴の水圧。${v('h')} に入れるのは？`,okWhy:'h は水面から測った深さ。下の穴は 0.15 m。',
+    ch:[{t:'水面からの深さ　0.15 m',ok:1},
+     {t:'ボトルの底からの高さ　0.050 m',...C([['高さは'],['底から測る',1],['のが当たり前。']],'水面から！','h は<b>水面から測った深さ</b>。その点より上にある水の高さ。')},
+     {t:'ボトルの高さ　0.25 m',...C([['h はいつも'],['ボトル全体の高さ',1],['。']],'その点の深さ！','h は<b>その点の深さ</b>。水面からその穴まで。ボトルの大きさは関係ない。')}]},
+   {tag:'中身',row:2,ask:'水面の高さは同じまま、<b>もっと太いボトル</b>にかえた。下の穴の水圧は？',okWhy:'p＝ρhg に容器の太さは入っていない。深さが同じなら水圧も同じ。',
+    ch:[{t:'変わらない',ok:1},
+     {t:'大きくなる',...C([['太いと水がたくさん。'],['水が多いぶん水圧も大きい',1],['。']],'深さで決まる！','水圧は<b>深さだけ</b>で決まる。入れ物の太さや形には左右されない。')},
+     {t:'小さくなる',...C([['太いと'],['水の重さが広がって弱まる',1],['。']],'深さで決まる！','水圧は<b>深さだけ</b>で決まる。入れ物の太さや形には左右されない。')}]},
+   {tag:'中身',row:3,ask:'いちばん勢いよく水が出るのは？',okWhy:'水圧は深いほど大きい。いちばん深い下の穴。',
+    ch:[{t:'いちばん下の穴',ok:1},
+     {t:'いちばん上の穴',...C([['上の穴は'],['水面に近いから勢いがある',1],['。']],'深いほど大きい！','水圧は<b>深いほど大きい</b>（p＝ρhg）。いちばん深い下の穴が最も強く押し出す。')},
+     {t:'3つとも同じ',...C([['同じボトルの水だから、'],['どの穴も同じ',1],['。']],'深さがちがう！','穴の<b>深さ h がちがう</b>ので水圧もちがう。深い穴ほど強い。')}]},
+   {tag:'矢印',row:4,ask:'下の穴のすぐ上で、<b>水がボトルの壁を押す力</b> の向きを描く。<br><small>長さは自由。「ここから」の点からひっぱる</small>',okWhy:'水圧による力は、面に垂直に押す向き。たての壁なら真横・外向き。',
+    arrow:{start:{x:340,y:404},e:{x:90,y:0},len:0,label:'F',given:[],hl:{x:12,y:-12},
+     ng:{rev:C([['壁が水を押し返すから'],['内向き',1],['。']],'水が押す向き！','水が壁を押す力は、<b>水のある側から壁へ＝外向き</b>。'),
+      side:C([['水圧は水の重さだから、'],['下向き',1],['（ななめ下）。']],'面に垂直！','水圧による力は<b>面に垂直に押す向き</b>。たての壁なら<b>真横</b>。')}}}
+  ]}],
+ clear:{title:'穴の勢いの理由、式で言えた',p1:`水圧　${v('p')} = ${v('ρhg')}<br>深さ ${v('h')} に比例する。`,p2:`${v('h')}＝<b>水面から</b>測った深さ<br>容器の太さ・形は<b>関係ない</b>`,
+  p3:'水圧による力は<b>面に垂直</b>。<br>たての壁なら<b>真横</b>に押す。',p4:'教科書の<b>水圧の式</b>と「水圧による力は面に垂直に押す向き」。<br>問42 の ρhg の部分もこの考え。'}},
+
+/* ---------------- 面3 大気圧＋水圧 ---------------- */
+{id:'f3',no:'面3',tag:'大気圧と水圧',hook:'深くもぐると耳が痛い。押しているのは何？',
+ shiki:`${v('p′')} = ${v('p')}<sub>0</sub> + ${v('ρhg')}`,ng:'大気圧を足し忘れる／<i>p</i><sub>0</sub>×<i>h</i>／<i>ρhg</i> は「下の水」の重さ',ql:'教科書 問42（大気圧と水圧）が解ける',
+ learn:`<div class="kyo">空気にも重さがあり、その重さで水面は上から押されている（大気圧）。この押しは水の中まで伝わるので、水の中の点が受ける圧力は「大気圧」と「水の重さによる水圧」を足したものになる。教科書 問42（p.97）も見よう。</div>`,
+ help:{式:'水深 h の点が受ける圧力は p′＝p₀＋ρhg（大気圧＋水圧）。',中身:'p₀ は水面を押す大気圧（そのまま足す）。ρhg はその点より上の水の重さによる。h は水面からの深さ。',矢印:'水がガラスを押す力は、面に垂直で、水の側からガラスへ。'},
+ parts:[{
+  text:'海で深さ 20 m までもぐると、耳やマスクがぐっと押される。<b>押しているものを式で言おう。</b>',
+  draw:`<rect x="0" y="160" width="546" height="390" fill="url(#hatch)" stroke="none"/>${surf(160)}<path d="M0,530 C100,520 200,536 300,528 S460,522 546,532" stroke-width="3"/>
+   <rect x="214" y="392" width="170" height="32" rx="14" fill="#fff" stroke-width="3"/><rect x="262" y="370" width="84" height="22" fill="#fff" stroke-width="3"/>
+   <circle cx="222" cy="398" r="20" fill="#fff" stroke-width="3"/><rect x="196" y="380" width="12" height="30" fill="#fff" stroke-width="3"/>
+   <path d="M384,400 l48,-14 l-6,26 z M384,416 l46,10 l-14,18 z" fill="#fff" stroke-width="2.5"/>
+   <path d="M60,162 h-10 v243 h10" stroke-width="2"/><path d="M486,162 h10 v366 h-10" stroke-width="2"/>`,
+  labels:lab(8,152,'水面（大気が押している）',14)+lab(14,290,'20 m',15)+lab(436,350,'30 m',15)+lab(424,368,'海の深さ',12)+lab(180,372,'マスクのガラス',13),
+  data:[['大気圧 p₀',`<span class="u">1.0×${E(5)} Pa</span>`],['水の密度',`<span class="u">1.0×${E(3)} kg/m³</span>`],['重力加速度の大きさ','<span class="u">9.8 m/s²</span>'],['ダイバーの深さ（水面から）','<span class="u">20 m</span>'],['海の深さ','<span class="u">30 m</span>']],
+  board:[{lb:'圧力の式',a:`${v('p′')} = ${v('p')}<sub>0</sub> + ${v('ρhg')}`,f:1},{lb:`${v('p')}<sub>0</sub> に入れる`,a:'大気圧（そのまま足す）'},{lb:`${v('ρhg')} は`,a:'上にある水の重さによる'},{lb:`${v('h')} に入れる`,a:'水面からの深さ 20 m'},{lb:'ガラスを押す力',a:'面に垂直・水の側から'}],
+  steps:[
+   {tag:'式',row:0,ask:`深さ 20 m でダイバーが受ける <b>圧力 ${v('p′')}</b> は？`,okWhy:'水面を押す大気圧も水中まで伝わる。だから大気圧＋水圧。',
+    ch:[{t:`${v('p′')} = ${v('p')}<sub>0</sub> + ${v('ρhg')}`,ok:1},
+     {t:`${v('p′')} = ${v('ρhg')}`,...C([['水の中なんだから、'],['水の重さの分だけ',1],['考えればいい。']],'大気圧も！','水面は<b>大気圧</b>に押されている。それも水中まで伝わるので <b>p′＝p₀＋ρhg</b>。')},
+     {t:`${v('p′')} = ${v('p')}<sub>0</sub> + ${v('ρh')}`,...C([['大気圧に'],['ρh を足せば',1],['十分。']],'g がいる！','水圧は ρhg。<b>g をかけて</b>水の重さによる圧力になる。')}]},
+   {tag:'中身',row:1,ask:`${v('p')}<sub>0</sub> に入れるのは？`,okWhy:'水面を押す大気圧 1.0×10⁵ Pa を、そのまま足す。',
+    ch:[{t:`大気圧　1.0×${E(5)} Pa`,ok:1},
+     {t:'0（水の中に空気はない）',...C([['水の中に空気はない。だから'],['大気圧は 0',1],['。']],'伝わる！','水面を押す大気圧は、<b>水を通して水中まで伝わる</b>。p₀＝1.0×10⁵ Pa を入れる。')},
+     {t:`1.0×${E(5)}×20`,...C([['深いほど空気も効くから、'],['大気圧×深さ',1],['。']],'そのまま足す！','大気圧は深さでかけ算しない。<b>水面を押している大気圧 p₀ を、そのまま</b>足す。深さで増えるのは ρhg の方。')}]},
+   {tag:'中身',row:2,ask:`${v('ρhg')} は、何による圧力？`,okWhy:'その点より上にある水の重さ。深いほど上の水が多い。',
+    ch:[{t:'その点より上にある水の重さ',ok:1},
+     {t:'その点より下にある水の重さ',...C([['ダイバーを'],['下の水が支えている',1],['から、その重さ。']],'上の水！','水圧は<b>その点より上にある水の重さ</b>による。深いほど上の水が多いので大きい。')},
+     {t:'ダイバー自身の重さ',...C([['重いダイバーほど'],['自分の重さで',1],['圧力が大きい。']],'水の重さ！','ρhg に入っているのは<b>水の密度と深さ</b>だけ。ダイバーの重さは関係ない。')}]},
+   {tag:'中身',row:3,ask:`${v('h')} に入れるのは？`,okWhy:'h は水面から測った深さ＝20 m。',
+    ch:[{t:'水面からの深さ　20 m',ok:1},
+     {t:'海の底からの高さ　10 m',...C([['海の底から'],['測った高さ 10 m',1],['を入れる。']],'水面から！','h は<b>水面から測った深さ</b>＝20 m。')},
+     {t:'海の深さ　30 m',...C([['h は'],['海の深さ 30 m',1],['で決まり。']],'その点の深さ！','h は<b>ダイバーのいる点の深さ</b>。海全体の深さではない。')}]},
+   {tag:'矢印',row:4,ask:'<b>水がマスクのガラスを押す力</b> の向きを描く。<br><small>長さは自由。「ここから」の点からひっぱる</small>',okWhy:'水圧による力は面に垂直。水の側からガラスへ（顔の方へ）。',
+    arrow:{start:{x:194,y:395},e:{x:80,y:0},len:0,label:'F',given:[],
+     ng:{rev:C([['中の空気が押すから'],['外向き',1],['。']],'水が押す向き！','水がガラスを押す力は、<b>水の側からガラスへ</b>（顔の方へ）。'),
+      side:C([['水圧は重さだから'],['下向き',1],['。']],'面に垂直！','水圧による力は<b>面に垂直</b>。たてのガラスなら<b>真横</b>。')}}}
+  ]}],
+ clear:{title:'耳が痛い理由、式で言えた',p1:`${v('p′')} = ${v('p')}<sub>0</sub> + ${v('ρhg')}<br>大気圧＋水圧`,p2:`${v('p')}<sub>0</sub>＝水面を押す<b>大気圧</b>（伝わる）<br>${v('ρhg')}＝<b>上</b>にある水の重さによる<br>${v('h')}＝水面からの深さ`,
+  p3:'どの向きの面でも、水は<b>面に垂直</b>に押す。',p4:'教科書 <b>問42</b>（水深 50 m で物体が受ける圧力）と同じ手順。'}},
+
+/* ---------------- 面4 浮力の正体 ---------------- */
+{id:'f4',no:'面4',tag:'浮力の正体',hook:'沈めた箱。下から押し上げる力の正体は？',
+ shiki:'上面と下面の水圧の差　＋矢印（長さ）',ng:'深いほど浮力が大きい／上面の力が大きい／上も下も同じ長さ',ql:'教科書 問45（深く沈めたときの浮力）が解ける',
+ learn:`<div class="kyo">水が面を押す力は、その面に直角の向き。上の面は上から、下の面は下から押される。</div><div class="kyo">水の中の物を持つと軽く感じるのは、水が物を上向きに押すから。この上向きの力が浮力。教科書 問45（p.98）のあたりも見よう。</div><div>1つの面が受ける力は F＝pS（圧力×面積）。</div>`,
+ help:{式:'1つの面が受ける力は F＝pS（p はその面の水圧、S は面積）。',中身:'h は水面からその面までの深さ。下面の方が深いので水圧も力も大きい。',矢印:'下面は下から押される＝上向き。深さが 1.5 倍なら力も 1.5 倍。'},
+ parts:[{
+  text:'水の中に沈めた箱。上の面も下の面も水に押される。<b>押し上げる力（浮力）はどこから？</b>',
+  draw:`<rect x="0" y="150" width="546" height="400" fill="url(#hatch)" stroke="none"/>${surf(150)}
+   <rect x="220" y="350" width="100" height="100" fill="#fff" stroke-width="3.5"/>
+   <path d="M178,152 h-10 v196 h10" stroke-width="2"/><path d="M138,152 h-10 v296 h10" stroke-width="2"/>`,
+  labels:lab(8,142,'水面',14)+lab(110,254,'0.20 m',14)+lab(66,404,'0.30 m',14)+lab(336,346,'上面',14)+lab(336,462,'下面',14)+lab(380,428,'横の力は',13)+lab(380,444,'打ち消し合う',13),
+  data:[['上面の深さ（水面から）','<span class="u">0.20 m</span>'],['下面の深さ（水面から）','<span class="u">0.30 m</span>'],['箱の1辺','<span class="u">0.10 m</span>（面の面積 0.010 m²）'],['水の密度',`<span class="u">1.0×${E(3)} kg/m³</span>`],['重力加速度の大きさ','<span class="u">9.8 m/s²</span>']],
+  board:[{lb:'1つの面の力',a:`${v('F')} = ${v('pS')}（${v('p')} = ${v('ρhg')}）`,f:1},{lb:`上面の ${v('h')}`,a:'水面から上面まで 0.20 m'},{lb:'大きい力',a:'下面（深いから）'},{lb:'下面の矢印',a:'上向き・上面の 1.5 倍'},{lb:'深く沈めると',a:'浮力は変わらない'}],
+  steps:[
+   {tag:'式',row:0,ask:`上面（面積 ${v('S')}）が水から受ける <b>力の大きさ</b> は？`,okWhy:'1つの面が受ける力＝その面の水圧×面積（F＝pS）。',
+    ch:[{t:`${v('F')} = ${v('pS')}（${v('p')} = ${v('ρhg')}）`,ok:1},
+     {t:`${v('F')} = ${v('p')} / ${v('S')}`,...C([['圧力の式 p＝F/S だから、'],['力は p÷S',1],['。']],'p×S！','p＝F/S を F について解くと <b>F＝pS</b>（圧力×面積）。')},
+     {t:`${v('F')} = ${v('ρVg')}`,...C([['水の力なら'],['なんでも ρVg',1],['。']],'それは浮力！','ρVg は物体全体の<b>浮力</b>。1つの面が受ける力は <b>F＝pS</b>。')}]},
+   {tag:'中身',row:1,ask:`上面の水圧 ${v('p')} = ${v('ρhg')} の ${v('h')} は？`,okWhy:'h は水面からその面までの深さ。上面なら 0.20 m。',
+    ch:[{t:'水面から上面までの深さ　0.20 m',ok:1},
+     {t:'箱の高さ　0.10 m',...C([['h は'],['箱の高さ',1],['のこと。']],'水面から！','h は<b>水面からその面までの深さ</b>。上面なら 0.20 m。')},
+     {t:'水面から下面までの深さ　0.30 m',...C([['深い方の'],['下面までの深さ',1],['で考える。']],'上面は上面！','上面の水圧には<b>上面の深さ 0.20 m</b>。下面は下面の深さ 0.30 m。')}]},
+   {tag:'中身',row:2,ask:'上面と下面、<b>水圧による力が大きい</b> のは？',okWhy:'下面の方が深いので水圧が大きい。面積は同じなので力も大きい。',
+    ch:[{t:'下面（深いから）',ok:1},
+     {t:'上面（上に水がのっているから）',...C([['上には水がのっているから、'],['上面の方が大きい',1],['。']],'深いほど大きい！','下面の方が<b>深い</b>ので水圧が大きい。だから力も大きい。')},
+     {t:'同じ',...C([['同じ箱の面だから'],['同じ大きさ',1],['。']],'深さがちがう！','上面 0.20 m、下面 0.30 m と<b>深さがちがう</b>ので、力もちがう。')}]},
+   {tag:'矢印',row:3,ask:`上面の力 ${v('F')}<sub>1</sub> は描いてある。<b>下面が受ける力 ${v('F')}<sub>2</sub></b> を描く。<br><small>長さは深さに比例させる</small>`,okWhy:'下面は上向きに押され、深さ 1.5 倍なので力も 1.5 倍。上向きの方が大きい分が浮力。',
+    arrow:{start:{x:290,y:450},e:{x:0,y:-120},len:1,label:'F₂',given:[{x:250,y:350,dx:0,dy:80,label:'F₁',lx:8,ly:-46},{x:190,y:432,dx:30,dy:0,label:'',lx:0,ly:0},{x:350,y:432,dx:-30,dy:0,label:'',lx:0,ly:0}],
+     ng:{rev:C([['水は'],['上から押すもの',1],['だから下向き。']],'下から押す！','下面は<b>下から</b>水に押される。面に垂直に押す向き＝<b>上向き</b>。'),
+      side:C([['ななめでも'],['だいたい上',1],['ならいい。']],'面に垂直！','下面は水平。力は面に垂直＝<b>真上</b>。'),
+      long:C([['下はずっと深いから、'],['2倍以上',1],['の長さ。']],'1.5倍！','深さは 0.20 m と 0.30 m。水圧は深さに比例するので、F₂ は F₁ の <b>1.5 倍</b>の長さ。'),
+      short:C([['上も下も同じ水だから、'],['同じ長さ',1],['。']],'1.5倍！','深さは 0.20 m と 0.30 m。水圧は深さに比例するので、F₂ は F₁ の <b>1.5 倍</b>の長さ。')}}},
+   {tag:'中身',row:4,ask:'箱を <b>もっと深く沈めた</b>（変形しない）。浮力の大きさは？',okWhy:'上面も下面も同じ量だけ水圧が増える。差（浮力）は変わらない。',
+    ch:[{t:'変わらない',ok:1},
+     {t:'大きくなる',...C([['深いほど水圧が大きいんだから、'],['浮力も大きくなる',1],['。']],'差は同じ！','上面も下面も<b>同じ量だけ</b>水圧が増える。<b>差は変わらない</b>ので浮力も同じ。差を決めるのは<b>上面と下面の深さの差</b>。')},
+     {t:'小さくなる',...C([['深いと'],['上から押す力が勝つ',1],['。']],'差は同じ！','上面も下面も<b>同じ量だけ</b>水圧が増える。<b>差は変わらない</b>ので浮力も同じ。差を決めるのは<b>上面と下面の深さの差</b>。')}]}
+  ]}],
+ clear:{title:'浮力の正体、矢印で言えた',p1:`1つの面の力　${v('F')} = ${v('pS')}<br>${v('p')} = ${v('ρhg')}（深いほど大きい）`,p2:`${v('h')}＝水面から<b>その面まで</b>の深さ<br>下面の方が深い → 力が大きい`,
+  p3:'上面は<b>下向き</b>、下面は<b>上向き</b>。<br>下面の方が長い。その差が浮力。',p4:'教科書 <b>問45</b>（深く沈めると浮力は？）と同じ考え。<br>深くしても<b>深さの差</b>は同じ → 浮力は変わらない。'}},
+
+/* ---------------- 面5 浮力とつり合い ---------------- */
+{id:'f5',no:'面5',tag:'浮力',hook:'このいかだ、なぜ沈まない？',
+ shiki:`${v('F')} = ${v('ρVg')}、${v('F')} = ${v('mg')}　＋矢印`,ng:'<i>V</i> に全体の体積／<i>ρ</i> に木の密度／浮いてるから浮力の方が大きい',ql:'教科書 問44・例題16（浮力）が解ける',
+ learn:`<div class="kyo">物が水に入ると、その分だけ水をおしのける。浮力の大きさは「おしのけた水の重さ」と同じ（アルキメデスの原理）。教科書 例題16（p.99）と、その前の説明も見よう。</div><div>浮かんでいて止まっている物は、上向きの力と下向きの力が<b>つり合っている</b>。</div>`,
+ help:{式:'浮力は F＝ρVg（押しのけた水の重さ）。浮いて止まっていれば、浮力と重力はつり合う。',中身:'ρ は押しのけた水の密度、V は押しのけた水の体積（水中にある部分）。',矢印:'浮力は水が下から押し上げる力。止まっているなら重力と同じ長さ。'},
+ parts:[{
+  text:'角材を組んだいかだが、水に浮かんで止まっている。<b>なぜ沈まない？ 式で言おう。</b>',
+  draw:`<rect x="0" y="250" width="546" height="300" fill="url(#hatch)" stroke="none"/><path d="M0,250 C40,246 70,254 110,250 M380,250 C420,246 470,254 546,249" stroke-width="3"/>
+   <rect x="110" y="206" width="270" height="110" fill="#fff" stroke-width="3.5"/><rect x="110" y="250" width="270" height="66" fill="url(#hatch)" stroke="none"/>
+   <path d="M164,206v110M218,206v110M272,206v110M326,206v110" stroke-width="2"/><path d="M110,250 h270" stroke-width="2" stroke-dasharray="7 6"/>
+   <path d="M392,208 h10 v40 h-10 M392,252 h10 v62 h-10" stroke-width="2.2"/><path d="M112,194 v-10 h266 v10" stroke-width="2.2"/>
+   <path d="M14,250 l6,-24 M24,250 l2,-30 M34,250 l-4,-20" stroke-width="2"/>`,
+  labels:lab(112,176,'全体 0.40 m³')+lab(410,226,'水面より上')+lab(410,244,'0.16 m³')+lab(410,280,'水中の部分')+lab(410,298,'0.24 m³')+lab(12,276,'水面',14),
+  data:[['いかだの質量','<span class="u">240 kg</span>'],['いかだ全体の体積','<span class="u">0.40 m³</span>'],['水中にある部分の体積','<span class="u">0.24 m³</span>'],['木の密度',`<span class="u">6.0×${E(2)} kg/m³</span>`],['水の密度',`<span class="u">1.0×${E(3)} kg/m³</span>`],['重力加速度の大きさ','<span class="u">9.8 m/s²</span>']],
+  board:[{lb:'浮力の式',a:`${v('F')} = ${v('ρVg')}`,f:1},{lb:'つり合い',a:`${v('F')} = ${v('mg')}`,f:1},{lb:`${v('ρ')} に入れる`,a:'水の密度'},{lb:`${v('V')} に入れる`,a:'水中の部分'},{lb:'力の矢印',a:'浮力は上・同じ長さ'}],
+  steps:[
+   {tag:'式',row:0,ask:`このいかだが受ける <b>浮力の大きさ ${v('F')}</b> を表す式は？`,okWhy:'浮力＝いかだが押しのけた水の重さ。押しのけた水の質量が ρV、それに g をかけて重さ〔N〕。',
+    ch:[{t:`${v('F')} = ${v('ρVg')}`,ok:1},
+     {t:`${v('p')} = ${v('ρhg')}`,...C([['水の中で受ける力なんだから、'],['水圧の式',1],['の'],[' p＝ρhg '],['で決まりでしょ。']],'それは水圧！','<b>p＝ρhg は1点の水圧〔Pa〕</b>。いかだ全体が受ける浮力〔N〕は F＝ρVg（押しのけた水の重さ）。')},
+     {t:`${v('F')} = ${v('ρV')}`,...C([['ρV で押しのけた水の質量が出る。'],['質量がそのまま力',1],['になるよね。']],'g が足りない！','ρV は水の<b>質量〔kg〕</b>。重さ〔N〕にするには g をかける。だから F＝ρVg。')}]},
+   {tag:'式',row:1,ask:`いかだは浮いて <b>止まっている</b>。浮力 ${v('F')} と重力 ${v('mg')} の関係は？`,okWhy:'浮いて止まっている＝上向きの浮力と下向きの重力がつり合っている。',
+    ch:[{t:`${v('F')} = ${v('mg')}`,ok:1},
+     {t:`${v('F')} ＞ ${v('mg')}`,...C([['沈まないで浮いてるんだから、'],['浮力のほうが大きい',1],['に決まってる。']],'止まってる！','止まっている＝<b>つり合い</b>。浮力のほうが大きければ、いかだは上へ動き出す。だから F＝mg。')},
+     {t:`${v('F')} = ${v('m')}`,...C([['重力は'],['質量の 240 そのまま',1],['でいい。']],'重さは mg！','重力の大きさは <b>mg〔N〕</b>（質量〔kg〕×重力加速度）。')}]},
+   {tag:'中身',row:2,ask:`${v('F')} = ${v('ρVg')} の <b>${v('ρ')}（密度）</b> に入れるのは？`,okWhy:'浮力は押しのけた「水」の重さ。だから ρ は水の密度。',
+    ch:[{t:`水の密度　1.0×${E(3)} kg/m³`,ok:1},
+     {t:`木の密度　6.0×${E(2)} kg/m³`,...C([['浮かんでいるのは'],['木なんだから、'],['ρ は木の密度',1],['。']],'水の密度！','ρ は<b>押しのけた水（流体）の密度</b>。物体（木）の密度は浮力の式には入らない。')},
+     {t:`水と木の密度の差　4.0×${E(2)} kg/m³`,...C([['水のほうが重いぶんだけ浮くんだから、'],['ρ は密度の差',1],['。']],'水だけ！','F＝ρVg の ρ は<b>水の密度そのもの</b>。浮力は押しのけた水の重さで、木の密度とは関係ない。')}]},
+   {tag:'中身',row:3,ask:`${v('F')} = ${v('ρVg')} の <b>${v('V')}（体積）</b> に入れるのは？`,okWhy:'押しのけた水の体積＝水中にある部分。だから V＝0.24 m³。',
+    ch:[{t:'水中にある部分　0.24 m³',ok:1},
+     {t:'いかだ全体　0.40 m³',...C([['いかだの浮力なんだから、'],['V はいかだ全体の体積',1],['でしょ。']],'水中だけ！','V は<b>押しのけた水の体積＝水中にある部分</b>だけ。水面より上の部分は水を押しのけていない。')},
+     {t:'水面より上の部分　0.16 m³',...C([['水から'],['出ている部分',1],['が浮いてるんだから、そこが浮力。']],'沈んだ側！','浮力を決めるのは<b>水を押しのけている部分（水中にある部分）</b>。出ている部分は関係ない。')}]},
+   {tag:'矢印',row:4,ask:'左の絵に <b>浮力の矢印</b> を描く。<br><small>「ここから」の点から、指でひっぱる → 決める</small>',okWhy:'浮力は上向き。いかだは止まっているので、重力と同じ長さ。',
+    arrow:{start:{x:257,y:283},e:{x:0,y:-130},len:1,label:'F',given:[{x:233,y:261,dx:0,dy:130,label:'mg',lx:-40,ly:-30}],
+     ng:{rev:C([['浮力も重さと同じで、'],['下向き',1],['にはたらくよ。']],'上向き！','浮力は水が<b>下から押し上げる力＝上向き</b>（重力と反対向き）。'),
+      side:C([['矢印なんて、'],['ななめ',1],['でも向きはだいたい合ってるでしょ。']],'まっすぐ上！','浮力は<b>重力と反対向き＝真上</b>。ななめだと横向きの力もあることになる。'),
+      long:C([['沈まないんだから、浮力の矢印は'],['重力より長い',1],['はず。']],'同じ長さ！','止まっている＝<b>つり合い</b>。浮力の矢印は重力と<b>同じ長さ</b>。長いと上へ動き出す。'),
+      short:C([['水につかっているのは6割だけだから、'],['浮力は重力より小さい',1],['。']],'同じ長さ！','6割しか沈まないのは、6割で<b>ちょうど重力とつり合う</b>から。浮力の矢印は重力と<b>同じ長さ</b>。')}}}
+  ]}],
+ clear:{title:'いかだが沈まない理由、式で言えた',p1:`浮力　${v('F')} = ${v('ρVg')}<br>浮いて止まっている → つり合い　${v('F')} = ${v('mg')}`,p2:`${v('ρ')}＝<b>水</b>の密度（木ではない）<br>${v('V')}＝<b>水中にある部分</b>の体積（全体ではない）`,
+  p3:'浮力は<b>上向き</b>。<br>止まっているので重力と<b>同じ長さ</b>。',p4:'教科書 <b>問44・例題16</b>（浮力・浮かぶ物体）と同じ手順。<br>「式 → ρ・V の中身 → 矢印」の順に考える。'}},
+
+/* ---------------- 面6 糸でつるす ---------------- */
+{id:'f6',no:'面6',tag:'糸でつるす',hook:'糸でつるした石。水に入れると糸はどうなる？',
+ shiki:`${v('T')} + ${v('F')} = ${v('mg')}　＋矢印`,ng:'浮力を下向き（<i>T</i>＝<i>mg</i>＋<i>F</i>）／<i>V</i>＝質量÷水の密度／水中では重力が減る',ql:'教科書 類題16（糸でつるす）が解ける',
+ learn:`<div class="kyo">水に沈めた物は、おしのけた水の重さと同じ大きさの浮力を上向きに受ける（アルキメデスの原理）。教科書 類題16（p.99）も見よう。</div><div>密度＝質量÷体積（中学で学んだ）。<br>止まっている物は、上向きの力の和と下向きの力の和が<b>つり合っている</b>。</div>`,
+ help:{式:'上向きの T と F の和が、下向きの mg とつり合う：T＋F＝mg。',中身:'V は石の体積＝石の質量÷石の密度。ρ は水の密度。重力 mg は水中でも変わらない。',矢印:'浮力は上向き。T の矢印と F の矢印を足すと mg の矢印の長さ。'},
+ parts:[{
+  text:'石を糸でつるし、水の中に全部沈めて止めた。<b>糸が引く力は、空気中とくらべてどうなる？</b>',
+  draw:`<path d="M150,110 H400" stroke-width="5"/><path d="M400,110 V86 M150,110 v-14" stroke-width="3"/><path d="M275,110 V330" stroke-width="2"/>
+   <path d="M140,180 V520 H420 V180" fill="#fff" stroke-width="3.5"/><rect x="143" y="220" width="274" height="297" fill="url(#hatch)" stroke="none"/><path d="M140,220 H420" stroke-width="2.5"/>
+   <path d="M245,330 h60 q12,0 14,14 l4,40 q2,16 -14,16 h-72 q-14,0 -12,-14 l6,-42 q2,-14 14,-14z" fill="#fff" stroke-width="3.5"/>`,
+  labels:lab(150,214,'水面',14)+lab(338,350,'石',15)+lab(288,160,'糸',14),
+  data:[['石の質量','<span class="u">0.60 kg</span>'],['石の密度',`<span class="u">2.0×${E(3)} kg/m³</span>`],['水の密度',`<span class="u">1.0×${E(3)} kg/m³</span>`],['重力加速度の大きさ','<span class="u">9.8 m/s²</span>']],
+  board:[{lb:'つり合いの式',a:`${v('T')} + ${v('F')} = ${v('mg')}`,f:1},{lb:`石の ${v('V')}`,a:'質量÷石の密度'},{lb:`${v('ρ')} に入れる`,a:'水の密度'},{lb:'水中の重力',a:'空気中と変わらない'},{lb:'浮力の矢印',a:'上向き・T＋F＝mg の長さ'}],
+  steps:[
+   {tag:'式',row:0,ask:`糸が石を引く力 ${v('T')}・浮力 ${v('F')}・重力 ${v('mg')} の関係は？`,okWhy:'上向きの力（T と F）の和＝下向きの力（mg）。石は止まっている。',
+    ch:[{t:`${v('T')} + ${v('F')} = ${v('mg')}`,ok:1},
+     {t:`${v('T')} = ${v('mg')} + ${v('F')}`,...C([['浮力は水が'],['下に引っぱる力',1],['だから T＝mg＋F。']],'浮力は上！','浮力は<b>上向き</b>。上向きの T と F の和が、下向きの mg とつり合う：<b>T＋F＝mg</b>。')},
+     {t:`${v('T')} = ${v('mg')}`,...C([['糸は石の重さを支える。'],['浮力は気にしない',1],['。']],'浮力も上！','水中では<b>浮力も上向きに</b>はたらく。T＋F＝mg。')}]},
+   {tag:'中身',row:1,ask:`浮力の式 ${v('F')} = ${v('ρVg')} の <b>${v('V')}（石の体積）</b> の求め方は？`,okWhy:'密度＝質量÷体積 なので、体積＝石の質量÷石の密度。',
+    ch:[{t:'石の質量 ÷ 石の密度',ok:1},
+     {t:'石の質量 ÷ 水の密度',...C([['水の中だから、'],['水の密度で割る',1],['。']],'石の密度！','石の体積は<b>石の</b>質量÷<b>石の</b>密度（密度＝質量÷体積）。')},
+     {t:'石の質量 × 石の密度',...C([['質量と密度を'],['かければ体積',1],['。']],'割る！','密度＝質量÷体積 なので、<b>体積＝質量÷密度</b>。')}]},
+   {tag:'中身',row:2,ask:`${v('F')} = ${v('ρVg')} の <b>${v('ρ')}</b> に入れるのは？`,okWhy:'ρ は押しのけた水の密度。石の密度は V を出すときだけ。',
+    ch:[{t:`水の密度　1.0×${E(3)} kg/m³`,ok:1},
+     {t:`石の密度　2.0×${E(3)} kg/m³`,...C([['沈んでいるのは石。'],['ρ は石の密度',1],['。']],'水の密度！','ρ は<b>押しのけた水の密度</b>。石の密度は V を出すときだけ使う。')},
+     {t:`石と水の密度の差　1.0×${E(3)} kg/m³`,...C([['石の方が重いぶん、'],['密度の差',1],['を入れる。']],'水だけ！','F＝ρVg の ρ は<b>水の密度そのもの</b>。')}]},
+   {tag:'中身',row:3,ask:`水の中で、石の <b>重力 ${v('mg')}</b> は？`,okWhy:'重力は地球が引く力。水中でも mg のまま。軽く感じるのは浮力のせい。',
+    ch:[{t:'空気中と変わらない',ok:1},
+     {t:'浮力の分だけ小さくなる',...C([['水に入れると軽く感じる。'],['重力が浮力の分へる',1],['。']],'重力はそのまま！','軽く感じるのは<b>浮力が上向きに加わる</b>から。<b>重力 mg は変わらない</b>。')},
+     {t:'まわりの水の重さの分だけ小さくなる',...C([['まわりの水の重さの分、'],['重力が小さくなる',1],['。']],'重力はそのまま！','重力は地球が引く力。<b>水中でも mg のまま</b>。')}]},
+   {tag:'矢印',row:4,ask:`${v('T')} と ${v('mg')} は描いてある。<b>浮力 ${v('F')}</b> の矢印を描く。`,okWhy:'T＋F＝mg。T の長さと F の長さを足すと mg の長さになる。',
+    arrow:{start:{x:292,y:380},e:{x:0,y:-65},len:1,label:'F',given:[{x:275,y:330,dx:0,dy:-65,label:'T',lx:-24,ly:10},{x:258,y:366,dx:0,dy:130,label:'mg',lx:-40,ly:-24}],
+     ng:{rev:C([['水が石を'],['下へおしこむ',1],['から下向き。']],'上向き！','浮力は<b>上向き</b>（重力と反対向き）。'),
+      side:C([['だいたい'],['ななめ上',1],['でいい。']],'真上！','浮力は<b>真上</b>。'),
+      long:C([['浮力だけで'],['重力と同じ長さ',1],['にする。']],'糸も引いてる！','上向きは<b>T と F の2つ</b>。<b>T の矢印＋F の矢印＝mg の矢印</b>の長さになるように描く。'),
+      short:C([['水の中の力は'],['ほんの少し',1],['。']],'足して mg！','上向きは<b>T と F の2つ</b>。<b>T の矢印＋F の矢印＝mg の矢印</b>の長さになるように描く。')}}}
+  ]}],
+ clear:{title:'糸がゆるむ理由、式で言えた',p1:`つり合い　${v('T')} + ${v('F')} = ${v('mg')}<br>浮力の分だけ、糸が引く力が小さくてすむ。`,p2:`${v('V')}＝石の質量÷<b>石の</b>密度<br>${v('ρ')}＝<b>水</b>の密度<br>${v('mg')} は水中でも<b>変わらない</b>`,
+  p3:'浮力は<b>上向き</b>。<br>T と F を足して mg の長さ。',p4:'教科書 <b>類題16</b>（糸でつるして水中に沈める）と同じ手順。'}},
+
+/* ---------------- 最後の面 ---------------- */
+{id:'fin',no:'最後の面',tag:'まとめ',final:1,hook:'初めて見る5問',
+ shiki:'考え方の文の空欄を選ぶ',ng:'式と文字の中身／答えを先に見せて考え方を選ぶ「逆の問い」／矢印の図。場面は全部はじめて',ql:'ここが解ける＝教科書 問41・42・44・45・例題16・類題16 が解ける',
+ learn:`<div>初めて見る5つの場面。教科書の問題と同じ<b>「考え方の文」</b>の空欄を選ぶ。計算はしない。</div><div class="kyo">面1〜6でやった手順：① どの式？ → ② 文字に何を入れる？ → ③ 力の矢印</div><div>1回目で選べた空欄の数が最後に出る。</div>`,
+ help:{},
+ parts:[]},
+];
+
+/* ----- 最後の面の5問 ----- */
+const fig=(inner)=>`<svg width="150" height="120" viewBox="0 0 150 120"><g fill="none" stroke="#3E3A8C" stroke-width="2.5" stroke-linecap="round">${inner}</g></svg>`;
+const ar=(x,y,dx,dy,w=4)=>`<path d="M${x},${y} l${dx},${dy}" stroke-width="${w}" marker-end="url(#ah)"/>`;
+const ft=(x,y,t)=>`<text x="${x}" y="${y}" font-family="Times New Roman,serif" font-style="italic" font-size="15" fill="#3E3A8C" stroke="none">${t}</text>`;
+const boxP3=(t,b)=>fig(`<rect x="0" y="0" width="150" height="120" fill="url(#hatchS)" stroke="none"/><rect x="50" y="20" width="50" height="80" fill="#fff"/>${ar(65,20,0,t)}${ar(85,100,0,-b)}`);
+const boxP4=(f,g,fdown)=>fig(`<rect x="0" y="60" width="150" height="60" fill="url(#hatchS)" stroke="none"/><path d="M0,60 H150" stroke-width="2"/><rect x="45" y="44" width="60" height="30" fill="#fff"/>${ar(68,59,0,g)}${ft(50,59+g+4,'mg')}${fdown?ar(84,66,0,f):ar(84,66,0,-f)}${ft(92,fdown?66+f:66-f+10,'F')}`);
+const ballP5=(t,f,fdown)=>fig(`<rect x="0" y="30" width="150" height="90" fill="url(#hatchS)" stroke="none"/><path d="M0,30 H150" stroke-width="2"/><path d="M75,0 V46" stroke-width="1.5"/><circle cx="75" cy="60" r="14" fill="#fff"/>${ar(75,46,0,-t)}${ft(80,Math.max(12,46-t+12),'T')}${ar(70,62,0,36)}${ft(46,100,'mg')}${f?(fdown?ar(84,66,0,f):ar(84,66,0,-f)):''}${f?ft(92,fdown?66+f:58,'F'):''}`);
+
+const FIN=[
+ {name:'問1',kyo:'問41',text:'重さ 500 N の人が、ハイヒールの<b>かかと1か所</b>（面積 1.0 cm²）に全部の重さをかけた。かかとが床を押す圧力を出したい。',
+  draw:`<path d="M60,430 H490" stroke-width="3"/><rect x="0" y="430" width="546" height="40" fill="url(#hatch)" stroke="none"/>
+   <path d="M150,430 C150,392 200,380 240,384 C300,388 340,330 372,316 L394,316 L394,346 L388,346 L388,430 L374,430 L374,352 C330,372 300,430 260,430 Z" fill="#fff" stroke-width="3.5"/>`,
+  labels:lab(330,470,'かかと 1.0 cm²',15)+`<path d="M381,436 v14" stroke="#3E3A8C" stroke-width="2"/>`,
+  data:[['人の重さ','<span class="u">500 N</span>'],['かかとの面積','<span class="u">1.0 cm²</span>']],
+  sent:`かかとが床を押す圧力は p＝【①】。F には【②】、S には【③】を入れる。あとは代入して計算する。`,
+  steps:[
+   {ask:'【①】に入るのは？',a:`${v('F')} / ${v('S')}`,okWhy:'圧力＝力÷面積。',ch:[{t:`${v('F')} / ${v('S')}`,ok:1},
+    {t:`${v('FS')}`,...C([['力も面積も'],['かけ合わせる',1],['。']],'割る！','圧力＝<b>力÷面積</b>。p＝F/S。')},
+    {t:`${v('S')} / ${v('F')}`,...C([['割り算なら'],['面積÷力',1],['でも同じ。']],'力÷面積！','圧力＝<b>力÷面積</b>。p＝F/S。')}]},
+   {ask:'【②】に入るのは？',a:'重さ 500 N',okWhy:'500 N はもう力。そのまま入れる。',ch:[{t:'重さ　500 N',ok:1},
+    {t:'500×9.8 N',...C([['重さには'],['9.8 をかける',1],['。']],'もう N！','500 N は<b>すでに力</b>。そのまま入れる。')},
+    {t:'500÷2 N（足が2本だから）',...C([['足は2本だから'],['半分に分ける',1],['。']],'1か所に全部！','問題は<b>かかと1か所に全部の重さ</b>をかけた場面。500 N をそのまま。')}]},
+   {ask:'【③】に入るのは？',a:`1.0×${E('−4')} m²`,okWhy:'1 cm²＝(10⁻² m)×(10⁻² m)＝10⁻⁴ m²。',ch:[{t:`1.0×${E('−4')} m²`,ok:1},
+    {t:'1.0 cm²（そのまま）',...C([['面積は'],['cm² のまま',1],['で入れる。']],'m² に直す！','Pa は N/m²。<b>1 cm²＝1.0×10⁻⁴ m²</b> に直す。')},
+    {t:`1.0×${E('−2')} m²`,...C([['1 cm＝10⁻² m だから、'],['1 cm²＝10⁻² m²',1],['。']],'2回かける！','1 cm²＝(10⁻² m)×(10⁻² m)＝<b>10⁻⁴ m²</b>。')}]}]},
+ {name:'問2',kyo:'問42',text:'湖の、水面から 10 m の深さにある石。この石が受ける圧力を出したい。<br><b>答えは 2.0×10<sup>5</sup> Pa</b>。この答えを導く考え方を選ぼう。',
+  draw:`<rect x="0" y="170" width="546" height="300" fill="url(#hatch)" stroke="none"/>${surf(170)}<path d="M0,470 C120,462 260,476 400,466 S520,470 546,468" stroke-width="3"/>
+   <path d="M240,466 C240,440 300,436 320,450 C334,460 330,468 320,468 Z" fill="#fff" stroke-width="3"/><path d="M200,172 h-10 v272 h10" stroke-width="2"/>`,
+  labels:lab(150,316,'10 m',15)+lab(10,162,'水面',14)+lab(340,460,'石',15),
+  data:[['大気圧',`<span class="u">1.0×${E(5)} Pa</span>`],['水の密度',`<span class="u">1.0×${E(3)} kg/m³</span>`],['重力加速度の大きさ','<span class="u">9.8 m/s²</span>'],['石の深さ','<span class="u">10 m</span>']],
+  sent:`p′＝p<sub>0</sub>＋ρhg で求める。p<sub>0</sub> を足すのは【①】からである。ρhg は、その点より【②】による圧力である。h は【③】で、10 m を入れる。`,
+  steps:[
+   {ask:'【①】に入るのは？',a:'水面を押す大気圧が水中まで伝わる',okWhy:'水面を押す大気圧が、水を通して伝わる。',ch:[{t:'水面を押す大気圧が、水中まで伝わる',ok:1},
+    {t:'石のすき間に空気が入っている',...C([['石のすき間の'],['空気の圧力',1],['を足す。']],'水面の大気圧！','p₀ は<b>水面を押す大気圧</b>。それが水中まで伝わる。')},
+    {t:'湖の底を大気が下から押す',...C([['湖の底を'],['大気が下から押す',1],['から。']],'水面から伝わる！','大気は<b>水面</b>を押している。その圧力が水を通して伝わる。')}]},
+   {ask:'【②】に入るのは？',a:'上にある水の重さ',okWhy:'その点より上にある水の重さによる。',ch:[{t:'上にある水の重さ',ok:1},
+    {t:'下にある水の重さ',...C([['石の'],['下の水の重さ',1],['。']],'上の水！','ρhg は<b>その点より上にある水の重さ</b>による圧力。')},
+    {t:'石自身の重さ',...C([['石の'],['自分の重さ',1],['による。']],'水の重さ！','ρhg に入るのは<b>水の</b>密度と深さ。石は関係ない。')}]},
+   {ask:'【③】に入るのは？',a:'水面からの深さ',okWhy:'h は水面から測った深さ。',ch:[{t:'水面から測った深さ',ok:1},
+    {t:'湖の底から測った高さ',...C([['h は'],['底から測る',1],['。']],'水面から！','h は<b>水面から測った深さ</b>。')},
+    {t:'石の高さ',...C([['h は'],['石の高さ',1],['。']],'その点の深さ！','h は<b>水面からその点までの深さ</b>。')}]}]},
+ {name:'問3',kyo:'問45',text:'水中の四角い消しゴム（変形しない）を、浅い所から深い所へ沈めた。<br><b>浮力の大きさは変わらない</b>。この答えを導く考え方を選ぼう。',
+  draw:`<rect x="0" y="150" width="546" height="400" fill="url(#hatch)" stroke="none"/>${surf(150)}
+   <rect x="130" y="220" width="80" height="44" fill="#fff" stroke-width="2.5" stroke-dasharray="7 6"/><rect x="320" y="420" width="80" height="44" fill="#fff" stroke-width="3.5"/>
+   <path d="M220,262 C270,300 300,360 312,410" stroke-width="2.5" marker-end="url(#ah)"/>`,
+  labels:lab(130,290,'浅い所',14)+lab(410,446,'深い所',14)+lab(10,142,'水面',14),
+  data:[['消しゴム','変形しない'],['考えるもの','上面と下面が水から受ける力']],
+  sent:`消しゴムの上面と下面が水から受ける力を矢印で表すと【①】。深くしても浮力が変わらないのは、【②】からである。上面と下面の水圧の差を決めているのは【③】である。`,
+  steps:[
+   {fig:1,ask:'【①】に入る図は？（矢印の長さは力の大きさ）',a:'下面の矢印が長い図',okWhy:'下面の方が深いので、下面の力が大きい。',ch:[{t:boxP3(26,50),ok:1},
+    {t:boxP3(50,26),...C([['上には水がのるから、'],['上の矢印が長い',1],['。']],'下が深い！','深いほど水圧が大きい。<b>下面の矢印の方が長い</b>。')},
+    {t:boxP3(36,36),...C([['上と下は'],['同じ長さ',1],['。']],'下が深い！','深いほど水圧が大きい。<b>下面の矢印の方が長い</b>。')}]},
+   {ask:'【②】に入るのは？',a:'上面と下面の水圧が同じ量だけ増え、差が変わらない',okWhy:'深さを増やすと、上も下も同じ量だけ水圧が増える。差は同じ。',ch:[{t:'上面と下面の水圧が同じ量だけ大きくなり、2つの力の差が変わらない',ok:1},
+    {t:'上面と下面の水圧が同じ割合で大きくなり、2つの力の差が変わらない',...C([['上も下も'],['同じ割合',1],['で増えるから差は同じ。']],'同じ量！','深くすると上も下も<b>同じ量</b>だけ水圧が増える。同じ割合で増えるなら、差は大きくなってしまう。')},
+    {t:'上面の水圧だけが大きくなり、2つの力の差が変わらない',...C([['深くすると'],['上面の水圧だけ',1],['が大きくなる。']],'両方増える！','上面も下面も<b>同じ量だけ</b>水圧が増える。')}]},
+   {ask:'【③】に入るのは？',a:'上面と下面の深さの差',okWhy:'水圧の差は深さの差で決まる。',ch:[{t:'上面と下面の深さの差',ok:1},
+    {t:'消しゴムの底面の面積',...C([['差を決めるのは'],['底面の面積',1],['。']],'深さの差！','水圧は深さで決まる。水圧の差を決めるのは<b>深さの差</b>。')},
+    {t:'沈めた深さ',...C([['差を決めるのは'],['沈めた深さ',1],['。']],'深さの差！','どれだけ沈めても、<b>上面と下面の深さの差</b>は同じ。')}]}]},
+ {name:'問4',kyo:'問44・例題16',text:`荷物を入れた発泡スチロールの箱（体積 2.0×10<sup>−3</sup> m³）を水に浮かべると、体積の <b>4分の1</b> が水中に沈んで止まった。このときの浮力 F と、箱と荷物を合わせた質量 m を出したい。`,
+  draw:`<rect x="0" y="300" width="546" height="250" fill="url(#hatch)" stroke="none"/>${surf(300)}<rect x="170" y="240" width="220" height="80" fill="#fff" stroke-width="3.5"/><rect x="170" y="300" width="220" height="20" fill="url(#hatch)" stroke="none"/><path d="M170,300 h220" stroke-width="2" stroke-dasharray="7 6"/>`,
+  labels:lab(10,292,'水面',14)+lab(400,316,'水中は 1/4',14),
+  data:[['箱の体積',`<span class="u">2.0×${E('−3')} m³</span>`],['水中にある部分','体積の 4分の1'],['水の密度',`<span class="u">1.0×${E(3)} kg/m³</span>`],['重力加速度の大きさ','<span class="u">9.8 m/s²</span>']],
+  sent:`浮力 F は F＝ρVg で求め、V には【①】を入れる。浮力と重力（大きさ mg）を正しく矢印で表した図は【②】。m は、この2つの力が【③】ことから求める。`,
+  steps:[
+   {ask:'【①】に入るのは？',a:'水中にある部分の体積',okWhy:'V は押しのけた水の体積＝水中にある部分。',ch:[{t:'水中にある部分の体積',ok:1},
+    {t:'箱全体の体積',...C([['箱の浮力だから'],['全体の体積',1],['。']],'水中だけ！','V は<b>押しのけた水の体積＝水中にある部分</b>。')},
+    {t:'水面より上にある部分の体積',...C([['浮いている'],['水面より上の部分',1],['。']],'沈んだ側！','V は<b>押しのけた水の体積＝水中にある部分</b>。')}]},
+   {fig:1,ask:'【②】に入る図は？（矢印の長さは力の大きさ）',a:'上向き・同じ長さの図',okWhy:'浮力は上向き。止まっているので重力と同じ長さ。',ch:[{t:boxP4(36,36,0),ok:1},
+    {t:boxP4(50,30,0),...C([['浮いてるんだから'],['浮力が大きい',1],['。']],'止まってる！','止まっている＝<b>つり合い</b>。同じ長さ。')},
+    {t:boxP4(30,30,1),...C([['浮力も'],['下向き',1],['。']],'上向き！','浮力は<b>上向き</b>。')}]},
+   {ask:'【③】に入るのは？',a:'つり合っている',okWhy:'浮力と重力はどちらも箱にはたらき、つり合っている。',ch:[{t:'つり合いの関係にある',ok:1},
+    {t:'作用と反作用の関係にある',...C([['浮力と重力は'],['作用と反作用',1],['。']],'つり合い！','作用反作用は<b>別の物体どうし</b>にはたらく2力。浮力と重力はどちらも<b>箱にはたらく</b>→つり合い。')},
+    {t:'同じ点にはたらいている',...C([['2つの力は'],['同じ点にはたらく',1],['から等しい。']],'つり合い！','大きさが等しいのは、箱が止まって<b>つり合っている</b>から。')}]}]},
+ {name:'問5',kyo:'類題16',text:`質量 0.79 kg、密度 7.9×10<sup>3</sup> kg/m³ の鉄の球を、ばねはかりにつるしたまま水の中へすっぽり入れた。このとき、ばねはかりが球を引く力 T を出したい。`,
+  draw:`<path d="M200,116 H360" stroke-width="5"/><rect x="262" y="116" width="36" height="76" fill="#fff" stroke-width="3"/><path d="M270,136 h20 M270,152 h20 M270,168 h20" stroke-width="1.5"/><path d="M280,192 V360" stroke-width="2"/>
+   <path d="M150,250 V520 H410 V250" fill="#fff" stroke-width="3.5"/><rect x="153" y="300" width="254" height="217" fill="url(#hatch)" stroke="none"/><path d="M150,300 H410" stroke-width="2.5"/>
+   <circle cx="280" cy="392" r="32" fill="#fff" stroke-width="3.5"/>`,
+  labels:lab(306,160,'ばねはかり',14)+lab(160,294,'水面',14)+lab(320,430,'鉄の球',14),
+  data:[['鉄の球の質量','<span class="u">0.79 kg</span>'],['鉄の密度',`<span class="u">7.9×${E(3)} kg/m³</span>`],['水の密度',`<span class="u">1.0×${E(3)} kg/m³</span>`],['重力加速度の大きさ','<span class="u">9.8 m/s²</span>']],
+  sent:`球にはたらく力を正しく矢印で表した図は【①】。浮力 F は、球の体積を【②】で求めてから F＝ρVg で求める。重力の大きさ mg は、球が水中にあっても【③】。`,
+  steps:[
+   {fig:1,ask:'【①】に入る図は？（矢印の長さは力の大きさ）',a:'T と F が上・mg が下の図',okWhy:'上向きの T と F の和が、下向きの mg とつり合う。',ch:[{t:ballP5(24,12,0),ok:1},
+    {t:ballP5(36,0,0),...C([['ばねはかりが'],['重さを全部支える',1],['。浮力はなし。']],'浮力も上！','水中では<b>浮力も上向き</b>。T＋F＝mg。')},
+    {t:ballP5(44,8,1),...C([['浮力は'],['下向き',1],['だから T は大きくなる。']],'浮力は上！','浮力は<b>上向き</b>。T＋F＝mg。')}]},
+   {ask:'【②】に入るのは？',a:'質量÷鉄の密度',okWhy:'体積＝質量÷密度。鉄の球なので鉄の密度。',ch:[{t:'球の質量 ÷ 鉄の密度',ok:1},
+    {t:'球の質量 ÷ 水の密度',...C([['水の中だから'],['水の密度で割る',1],['。']],'鉄の密度！','球の体積は<b>鉄の</b>質量÷<b>鉄の</b>密度。')},
+    {t:'球の質量 × 鉄の密度',...C([['質量と密度を'],['かける',1],['。']],'割る！','<b>体積＝質量÷密度</b>。')}]},
+   {ask:'【③】に入るのは？',a:'空気中と変わらない',okWhy:'重力は水中でも変わらない。',ch:[{t:'空気中と変わらない',ok:1},
+    {t:'浮力の分だけ小さくなる',...C([['水中では'],['重力が浮力の分へる',1],['。']],'重力はそのまま！','<b>重力 mg は変わらない</b>。浮力は別の力として上向きに加わる。')},
+    {t:'水の重さの分だけ小さくなる',...C([['まわりの'],['水の重さの分へる',1],['。']],'重力はそのまま！','<b>重力 mg は変わらない</b>。')}]}]}
+];
+const finFace=FACES.find(f=>f.final);
+finFace.parts=FIN.map(p=>({...p,steps:p.steps.map((s,i)=>({...s,tag:p.name,row:i}))}));
+
+/* ===================== 表紙 ===================== */
+const ml=$('#menList');
+function drawCover(){
+  ml.innerHTML='';
+  FACES.forEach((m,i)=>{const d=document.createElement('div');d.className='koma men'+(m.final?' last':'');
+    d.style.left=(40+(i%4)*278)+'px';d.style.top=(226+Math.floor(i/4)*298)+'px';
+    const done=rec.done[m.id];
+    const stamp=m.final?'':(done?'<span class="stamp">できた</span>':'');
+    d.innerHTML=`<div class="no">${m.no}</div>${stamp}<button class="play">${done||(m.final&&rec.fin!=null)?'▶ もう一度':'▶ あそぶ'}</button><div class="hook">${m.final?m.hook+'（教科書の問題を解く考え方を選ぶ）':m.hook}</div><div class="shiki">${m.shiki}</div><div class="ng">${m.final?'':'ねらう取り違え：'}${m.ng}</div><div class="ql">${m.ql}</div>`;
+    d.querySelector('.play').onclick=()=>startFace(i);
+    ml.appendChild(d)});
+  const n=FACES.filter(f=>!f.final&&rec.done[f.id]).length;
+  const d=document.createElement('div');d.className='koma men note';d.style.left=(40+3*278)+'px';d.style.top=(226+298)+'px';
+  d.innerHTML=`<div class="no">この端末の記録</div><div class="hook" style="margin-top:6px">できた面　${n} / 6</div>${rec.fin!=null?`<div style="font-weight:700">最後の面（1回目）${rec.fin} / 15</div>`:''}<div>どの面からでも始められる。おすすめは面1から順に。最後の面は面1〜6のあとで。<br>まちがえた問いは、その面の最後にもう一度出る。</div><button id="resetB">記録を消す</button>`;
+  ml.appendChild(d);
+  $('#resetB').onclick=()=>fuda('resetF',1);
+}
+$('#resetYes').onclick=()=>{rec={done:{}};save(rec);fuda('resetF',0);drawCover()};
+
+/* ===================== 遊ぶ ===================== */
+function show(id){$$('.scr').forEach(s=>s.classList.toggle('on',s.id===id))}
+function fuda(id,on){$('#'+id).style.display=on?'block':'none'}
+$$('[data-close]').forEach(b=>b.onclick=()=>b.closest('.fuda').style.display='none');
+
+let F=null,fi=0,flat=[],pos=0,missed=new Set(),firstMiss=new Set(),review=false,arrowTip=null,curPi=-1,filled={},doneIdx=new Set();
+function startFace(i){fi=i;F=FACES[i];review=false;missed=new Set();firstMiss=new Set();doneIdx=new Set();filled={};curPi=-1;
+  flat=[];F.parts.forEach((p,pi)=>p.steps.forEach((s,si)=>flat.push({pi,si})));pos=0;
+  $('#ttl').innerHTML=`${F.no}　${F.final?'初めて見る5問':F.hook}`;$('#ttl').style.fontSize=F.hook.length>20?'19px':'22px';
+  $('#learnBody').innerHTML=F.learn;$('#learnH').textContent=F.final?'最後の面（読まずにとばしてもよい）':'この面で使う言葉（読まずにとばしてもよい）';
+  show('pl');ask();fuda('learn',1)}
+$('#learnGo').onclick=()=>fuda('learn',0);
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+const P=()=>F.parts[flat[pos].pi], S=()=>P().steps[flat[pos].si];
+
+function loadPart(pi){curPi=pi;const p=F.parts[pi];
+  $('#sv').innerHTML=`<g filter="url(#hand)" fill="none" stroke="#3E3A8C" stroke-linecap="round" stroke-linejoin="round">${p.draw}</g><g>${p.labels||''}</g><g id="arrows"></g>`;
+  $('#sceneText').innerHTML=p.text;
+  $('#dataGrid').innerHTML=p.data.map(([k,x])=>`<div>${k}　${x}</div>`).join('');
+  drawBoard();drawArrows(null)}
+function drawBoard(){const p=F.parts[curPi],fl=filled[curPi]||{},cur=S().row;
+  if(F.final){let i=0;const marks='①②③';
+    $('#board').innerHTML=`<div class="sent"><span class="h">${p.name}　考え方の文</span>${p.sent.replace(/【[①②③]】/g,()=>{const k=i++;return fl[k]?`<span class="bl fill">${p.steps[k].a}</span>`:`<span class="bl${k===cur?' on':''}">【${marks[k]}】</span>`})}</div>`;
+  }else{const h=Math.min(42,222/p.board.length);
+    $('#board').innerHTML=p.board.map((r,k)=>`<div class="row${k===cur?' on':''}" style="height:${h}px"><span class="lb">${r.lb}</span><span class="slot${r.f?' f':''}${fl[k]?' fill':''}">${r.a}</span></div>`).join('')}}
+function setProg(){
+  if(F.final){$('#prog').innerHTML=F.parts.map((p,pi)=>{const all=p.steps.every((s,si)=>doneIdx.has(flat.findIndex(x=>x.pi===pi&&x.si===si)));return `<span class="${all?'done':(pi===flat[pos].pi?'now':'')}">${p.name}</span>`}).join('')}
+  else{$('#prog').innerHTML=flat.map((x,k)=>`<span class="${doneIdx.has(k)?'done':(k===pos?'now':'')}">${F.parts[x.pi].steps[x.si].tag}</span>`).join('')}}
+
+function ask(){
+  const it=flat[pos];if(it.pi!==curPi)loadPart(it.pi);
+  const s=S();setProg();drawBoard();
+  $('#ok').style.display='none';$('#sceneMsg').innerHTML='';
+  $('#ask').innerHTML=`<span class="tag">${s.tag}</span>${s.ask}`;
+  const box=$('#choices');box.innerHTML='';box.className=s.fig?'figs':'';
+  if(s.arrow){
+    $('#decide').style.display='block';arrowTip=null;drawArrows(null);$('#scene').classList.add('drawmode');
+    $('#sceneMsg').innerHTML='「ここから」の点から、指をすべらせて矢印をのばす。';
+  }else{
+    $('#decide').style.display='none';$('#scene').classList.remove('drawmode');drawArrows(null);
+    const order=shuffle(s.ch);const kana='アイウ';
+    box._ok=order.findIndex(c=>c.ok);
+    order.forEach((c,k)=>{const b=document.createElement('button');b.innerHTML=s.fig?`<div style="text-align:left;font-weight:700">${kana[k]}</div>${c.t}`:c.t;
+      b.onpointerdown=()=>b.classList.add('press');b.onpointerleave=()=>b.classList.remove('press');
+      b.onpointerup=()=>{b.classList.remove('press');if(box._lock)return;box._lock=1;c.ok?right():wrong(c)};
+      box.appendChild(b)});
+    box._lock=0;
+  }
+}
+function right(){
+  snd.ok();const s=S();doneIdx.add(pos);
+  (filled[curPi]=filled[curPi]||{})[s.row]=1;drawBoard();
+  const sl=$$('#board .slot.fill, #board .bl.fill');
+  const words=['書けた','そのとおり','合ってる','いい読み','それだ'];
+  $('#okBig').textContent=words[pos%words.length];$('#okWhy').innerHTML=s.okWhy;
+  $('#ok').style.display='block';setProg();
+  $('#ok').onclick=()=>{$('#ok').onclick=null;pos++;pos<flat.length?ask():finish()};
+}
+function wrong(c){missed.add(pos);if(!review)firstMiss.add(flat[pos].pi+'-'+flat[pos].si);tsukitsuke(c,()=>ask())}
+
+/* ---------- つきつけ ---------- */
+const SPK={
+  note:'<rect x="40" y="230" width="110" height="110" fill="#fff"/><path d="M58,258h76M58,280h76M58,302h76M58,324h56" stroke-width="2"/><path d="M38,230v110" stroke-width="6"/>',
+  pencil:'<path d="M40,322 L150,212 L170,232 L60,342 z" fill="#fff"/><path d="M40,322 l-8,28 l28,-8"/><path d="M140,222 l20,20" stroke-width="2"/>',
+  bottle:'<rect x="70" y="200" width="64" height="140" fill="#fff"/><rect x="86" y="178" width="32" height="22" fill="#fff"/><path d="M70,260 h64" stroke-width="2"/><path d="M70,260 h64 v80 h-64z" fill="url(#hatch)" stroke="none"/>',
+  eraser:'<path d="M40,290 l90,-50 l40,40 l-90,50 z" fill="#fff"/><path d="M85,265 l40,40" stroke-width="2"/>'};
+const SPKS=Object.keys(SPK);let spk=0;
+const BUBBLE='<path d="M210,40 h600 a18,18 0 0 1 18,18 v140 a18,18 0 0 1 -18,18 h-500 l-100,70 l40,-70 h-40 a18,18 0 0 1 -18,-18 v-140 a18,18 0 0 1 18,-18z" fill="#fff"/>';
+function tsukitsuke(c,done){
+  const tk=$('#tk');tk.style.display='block';
+  $('#tkDraw').innerHTML=BUBBLE+SPK[SPKS[spk++%SPKS.length]];
+  const cl=$('#claim');cl.innerHTML='';
+  c.claim.forEach(([t,bad])=>{const s=document.createElement('span');s.textContent=t;
+    if(t.trim().length>1){s.className='w'+(bad?' bad':'');s.onpointerup=e=>{e.stopPropagation();if(tk._hit)return;bad?hit(s):huff()}}
+    cl.appendChild(s)});
+  tk._hit=0;tk._miss=0;tk.onpointerup=null;
+  $('#fix').style.display='none';$('#tkNext').style.display='none';$('#tkHint').textContent='';
+  function huff(){snd.huff();const h=$('#huff');h.style.opacity=1;setTimeout(()=>h.style.opacity=0,700);
+    if(++tk._miss>=2){$('#tkHint').textContent='ヒント：自分が選んだ答えの、決め手になっている言葉はどれ？';
+      const w=cl.querySelector('.w.bad');if(w&&!calm)w.animate([{background:'transparent'},{background:'#E9E8F4'},{background:'transparent'}],{duration:900,iterations:2})}}
+  function hit(s){tk._hit=1;s.classList.add('hit');snd.strike();burst(c.ichigo,()=>{
+      $('#fix').innerHTML=c.fix;$('#fix').style.display='block';$('#tkNext').style.display='block';
+      setTimeout(()=>{tk.onpointerup=()=>{tk.style.display='none';tk.onpointerup=null;done()}},250)})}
+}
+function burst(word,after){
+  const b=$('#burst');b.style.display='block';b.innerHTML=burstSvg(word,calm?0:1);
+  if(calm){setTimeout(()=>{b.style.display='none';after()},700);return}
+  const t0=st.style.transform;
+  st.animate([{transform:t0},{transform:t0+' translate(6px,0)'},{transform:t0+' translate(-6px,2px)'},{transform:t0+' translate(3px,-1px)'},{transform:t0+' translate(-3px,0)'},{transform:t0}],{duration:180,delay:120});
+  b.firstElementChild.animate([{transform:'scale(.6)',opacity:0},{transform:'scale(1.06)',opacity:1,offset:.5},{transform:'scale(1)',opacity:1}],{duration:220,easing:'ease-out'});
+  setTimeout(()=>{b.style.display='none';after()},1150);
+}
+function burstSvg(word,j){
+  const cx=590,cy=380,n=18,pts=[];
+  for(let i=0;i<n*2;i++){const a=i/(n*2)*Math.PI*2,r=(i%2?300:470)*(1+(Math.random()-.5)*.12*j);pts.push((cx+Math.cos(a)*r).toFixed(0)+','+(cy+Math.sin(a)*r*.42).toFixed(0))}
+  const fs=word.length>6?62:74;
+  return `<g style="transform-box:view-box;transform-origin:590px 380px"><polygon points="${pts.join(' ')}" fill="#fff" stroke="#3E3A8C" stroke-width="5" stroke-linejoin="round"/>
+  <text x="590" y="404" text-anchor="middle" font-family="Hiragino Maru Gothic ProN, Hiragino Sans, sans-serif" font-weight="700" font-size="${fs}" fill="#C8372D">${word}</text></g>`;
+}
+
+/* ---------- 矢印 ---------- */
+const sv=$('#sv');
+function svgPt(e){const r=sv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*546,y:(e.clientY-r.top)/r.height*550}}
+function arrowSvg(x,y,dx,dy,label,lx,ly){
+  return `<path d="M${x},${y} l${dx.toFixed(1)},${dy.toFixed(1)}" stroke="#3E3A8C" stroke-width="5" fill="none" stroke-linecap="round" marker-end="url(#ah)"/><circle cx="${x}" cy="${y}" r="4" fill="#3E3A8C"/>`+
+   (label?`<text x="${x+dx+lx}" y="${y+dy+ly}" font-family="Times New Roman,serif" font-style="italic" font-size="22" fill="#3E3A8C">${label}</text>`:'');
+}
+function arrowsFor(step,tip,correct){
+  const a=step&&step.arrow;if(!a)return '';
+  let h=a.given.map(g=>arrowSvg(g.x,g.y,g.dx,g.dy,g.label,g.lx,g.ly)).join('');
+  if(correct){h+=arrowSvg(a.start.x,a.start.y,a.e.x,a.e.y,a.label,a.e.x>=0?10:-30,a.e.y<0?14:14);return h}
+  h+=`<circle cx="${a.start.x}" cy="${a.start.y}" r="7" fill="#fff" stroke="#3E3A8C" stroke-width="3"/>`;
+  const hl=a.hl||{x:12,y:26};
+  if(!tip)h+=`<text x="${a.start.x+hl.x}" y="${a.start.y+hl.y}" font-family="Hiragino Sans,sans-serif" font-size="15" fill="#3E3A8C">ここから</text>`;
+  else h+=arrowSvg(a.start.x,a.start.y,tip.x-a.start.x,tip.y-a.start.y,a.label,10,6);
+  return h;
+}
+function drawArrows(tip,correct){const g=$('#arrows');if(g)g.innerHTML=arrowsFor(S(),tip,correct)}
+let dragging=false;
+sv.addEventListener('pointerdown',e=>{const s=S();if(!s||!s.arrow||$('#ok').style.display==='block')return;dragging=true;try{sv.setPointerCapture(e.pointerId)}catch(_){}arrowTip=svgPt(e);drawArrows(arrowTip)});
+sv.addEventListener('pointermove',e=>{if(!dragging)return;arrowTip=svgPt(e);drawArrows(arrowTip)});
+sv.addEventListener('pointerup',()=>{dragging=false});
+$('#decide').onclick=()=>{
+  const a=S().arrow;
+  if(!arrowTip||Math.hypot(arrowTip.x-a.start.x,arrowTip.y-a.start.y)<20){$('#sceneMsg').innerHTML='<b>「ここから」の点</b>の近くから、指をすべらせて矢印をのばそう。';return}
+  const dx=arrowTip.x-a.start.x,dy=arrowTip.y-a.start.y,len=Math.hypot(dx,dy),el=Math.hypot(a.e.x,a.e.y);
+  const ang=Math.acos(Math.max(-1,Math.min(1,(dx*a.e.x+dy*a.e.y)/(len*el))))*180/Math.PI;
+  let k=null;
+  if(ang>135)k='rev';else if(ang>20)k='side';
+  else if(a.len){const r=len/el;if(r>1.18)k='long';else if(r<.82)k='short'}
+  if(!k){drawArrows(null,1);$('#decide').style.display='none';$('#scene').classList.remove('drawmode');$('#sceneMsg').innerHTML='';right()}
+  else{missed.add(pos);if(!review)firstMiss.add(flat[pos].pi+'-'+flat[pos].si);tsukitsuke(a.ng[k],()=>ask())}
+};
+
+/* ---------- クリア ---------- */
+function miniScene(p){const s=p.steps.find(x=>x.arrow);
+  return `<svg width="230" height="232" viewBox="0 0 546 550" style="position:absolute;right:14px;top:10px"><g filter="url(#hand)" fill="none" stroke="#3E3A8C" stroke-linecap="round" stroke-linejoin="round">${p.draw}</g>${arrowsFor(s,null,1)}</svg>`}
+function finish(){
+  show('cl');snd.clear();
+  const n=missed.size;
+  if(!F.final){rec.done[F.id]=1;
+    const c=F.clear;$('#clTitle').textContent=review?'まちがえた所も、言えた':c.title;
+    $('#pg1').innerHTML=`<div class="n">1　どの式？</div>${c.p1}`;$('#pg2').innerHTML=`<div class="n">2　文字に何を入れる？</div>${c.p2}`;
+    $('#pg3').innerHTML=`<div class="n">3　力の矢印</div><div style="width:270px">${c.p3}</div>${miniScene(F.parts[0])}`;$('#pg4').innerHTML=`<div class="n">4　教科書のどこが解ける？</div>${c.p4}`;
+    $('#clMsg').innerHTML=n?`まちがえた問いが <b>${n}つ</b>。選択肢の順番を変えて、今のうちにもう一度だけ答えておこう（思い出すほど残る）。`:'まちがえなし。この手順で、教科書の問題も考えられる。';
+  }else{
+    const total=F.parts.reduce((a,p)=>a+p.steps.length,0),first=total-firstMiss.size;
+    if(!review){rec.fin=Math.max(rec.fin||0,first);F._first=first;F._fm=new Set(firstMiss)}
+    $('#clTitle').textContent=review?'まちがえた空欄も、選べた':'最後の面、5問を最後まで解いた';
+    $('#pg1').innerHTML=`<div class="n">1回目で選べた空欄</div><div style="font-size:54px;font-family:'Times New Roman',serif;margin-top:20px">${first} <span style="font-size:28px">/ ${total}</span></div>`;
+    $('#pg2').innerHTML=`<div class="n">問ごと（1回目）</div>`+F.parts.map((p,pi)=>{const m=p.steps.filter((s,si)=>firstMiss.has(pi+'-'+si)).length;return `${p.name}　${3-m} / 3　<span style="font-size:15px">教科書 ${p.kyo} の考え方</span>`}).join('<br>');
+    $('#pg3').innerHTML=`<div class="n">5問で使った手順</div>① どの式？（${v('p')}=${v('F')}/${v('S')}、${v('p′')}=${v('p')}<sub>0</sub>+${v('ρhg')}、${v('F')}=${v('ρVg')}）<br>② 文字に何を入れる？（${v('h')}・${v('ρ')}・${v('V')}・${v('S')}）<br>③ 力の矢印（向きと長さ）`;
+    $('#pg4').innerHTML=`<div class="n">教科書で解ける問題</div>問41・問42・問44・問45・例題16・類題16<br><span style="font-size:16px">（教科書 p.95〜99）</span>`;
+    $('#clMsg').innerHTML=firstMiss.size&&!review?`1回目でまちがえた空欄が <b>${firstMiss.size}つ</b>。もう一度だけ答えておこう。苦手な問があれば、その面（面1〜6）に戻るのもよい。`:(n?`まちがえた空欄が <b>${n}つ</b>。もう一度だけ答えておこう。`:'全部そろった。教科書 p.95〜99 の問題も、この考え方で解ける。');
+  }
+  save(rec);
+  $('#again').style.display=n?'block':'none';
+  const nx=FACES[fi+1];$('#nextFace').style.display=nx&&!n?'block':'none';
+  if(!calm)['#pg1','#pg2','#pg3','#pg4'].forEach((p,i)=>$(p).animate([{opacity:0,clipPath:'inset(0 100% 0 0)'},{opacity:1,clipPath:'inset(0 0 0 0)'}],{duration:520,delay:i*380,easing:'ease-out',fill:'backwards'}));
+}
+$('#again').onclick=()=>{review=true;flat=[...missed].sort((a,b)=>a-b).map(k=>flat[k]);missed=new Set();doneIdx=new Set();pos=0;curPi=-1;show('pl');ask()};
+$('#nextFace').onclick=()=>startFace(fi+1);
+$$('[data-home]').forEach(b=>b.onclick=()=>{drawCover();show('cv')});
+
+/* ---------- やめる・ヘルプ ---------- */
+$$('[data-quit]').forEach(b=>b.onclick=()=>fuda('quitF',1));
+$('#quitYes').onclick=()=>{fuda('quitF',0);$('#tk').style.display='none';drawCover();show('cv')};
+$('#help').onclick=()=>{const s=S();
+  $('#howtoNow').innerHTML=F.final?'今は最後の面。考え方の文の空欄に入るものを選ぶ。迷ったら「① どの式？ ② 文字に何を入れる？ ③ 力の矢印」を思い出す。':(F.help[s.tag]||'');fuda('howto',1)};
+
+drawCover();
+window.__mizu={okIndex:()=>$('#choices')._ok,arrow:()=>{const a=S().arrow;return a?{s:a.start,e:a.e}:null}};
+})();
+</script>
+</body>
+</html>
